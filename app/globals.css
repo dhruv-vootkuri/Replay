@@ -1,0 +1,86 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import "tailwindcss";
+
+@theme inline {
+  /* ─── Core palette ─────────────────────────────── */
+  --color-deep-space:     #080C14;
+  --color-surface:        #0F172A;
+  --color-starlight:      #F1F5F9;
+  --color-dim-starlight:  #94A3B8;
+  --color-signal:         #38BDF8;
+
+  /* ─── Per-tab accents ──────────────────────────── */
+  --color-anomaly:        #F59E0B;
+  --color-divergence:     #F43F5E;
+  --color-boundary:       #818CF8;
+  --color-pulse:          #34D399;
+
+  /* ─── Typography ───────────────────────────────── */
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body:    "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono:    "IBM Plex Mono", "Fira Code", monospace;
+
+  /* ─── Type scale ───────────────────────────────── */
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  3.75rem;
+  --text-7xl:  4.5rem;
+
+  /* ─── Spacing ──────────────────────────────────── */
+  --spacing-px:   1px;
+  --spacing-0:    0px;
+  --spacing-1:    0.25rem;
+  --spacing-2:    0.5rem;
+  --spacing-3:    0.75rem;
+  --spacing-4:    1rem;
+  --spacing-5:    1.25rem;
+  --spacing-6:    1.5rem;
+  --spacing-8:    2rem;
+  --spacing-10:   2.5rem;
+  --spacing-12:   3rem;
+  --spacing-16:   4rem;
+  --spacing-20:   5rem;
+  --spacing-24:   6rem;
+  --spacing-32:   8rem;
+  --spacing-40:   10rem;
+  --spacing-48:   12rem;
+  --spacing-64:   16rem;
+
+  /* ─── Radius ───────────────────────────────────── */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
+  --radius-full: 9999px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  background-color: #080C14;
+  color: #94A3B8;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Soft snap for section landings; no snap inside Features tabs */
+  scroll-snap-type: y proximity;
+}
+
+body {
+  background-color: #080C14;
+  color: #94A3B8;
+}
