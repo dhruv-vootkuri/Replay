@@ -193,7 +193,7 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
                   <Constellation mode="svg" points={tab.points} edges={tab.edges} state="resolved" variant={tab.variant} accentColor={tab.accent} overlayPoints={tab.overlayPoints} overlayEdges={tab.overlayEdges} paused={canvasPaused} />
                 </div>
                 <div style={{ textAlign: "center", maxWidth: 340 }}>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#FFFFFF", marginBottom: 8, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
+                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 8, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
                   <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.625rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 12, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
                   <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.25rem, 5vw, 1.625rem)", fontWeight: 600, lineHeight: 1.15, color: "#FFFFFF", marginBottom: 14, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
                   <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "0.9375rem", lineHeight: 1.65, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>
@@ -210,7 +210,7 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
                 <div style={{ width: 1, height: "46%", background: "#1E293B", flexShrink: 0 }} />
 
                 <div style={{ flex: 1, padding: "0 52px 0 44px", maxWidth: 500 }}>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#FFFFFF", marginBottom: 10, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
+                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 10, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
                   <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.6875rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 18, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
                   <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.375rem, 2vw, 2rem)", fontWeight: 600, lineHeight: 1.1, color: "#FFFFFF", marginBottom: 20, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
                   <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "clamp(0.9375rem, 1.25vw, 1.0625rem)", lineHeight: 1.75, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>

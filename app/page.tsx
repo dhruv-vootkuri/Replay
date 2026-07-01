@@ -39,6 +39,11 @@ const W_IN  = [853/T,  945/T] as const; // Waitlist entrance       (92 vh)
 // Snap anchor vh positions — no anchors inside the Features range (4th page)
 const SNAP_VH = [0, 135, 270, 945];
 
+// Ease-in-out curve for scroll-linked transforms — linear reads as
+// mechanical; smoothstep gives the same "natural" deceleration feel as the
+// rest of the page's hand-tuned transitions.
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
 export default function Home() {
   const { scrollYProgress } = useScroll();
   const rm = useReducedMotion() ?? false;
@@ -125,6 +130,14 @@ export default function Home() {
     );
   }, [featTabMV]);
 
+  // ── Header opacity — transparent on first paint (full hero visible),
+  // solidifies across the Landing→Problem crossfade (P_IN), fully opaque by
+  // the moment Problem finishes arriving. Kept as a MotionValue (not React
+  // state) so it updates on the same render-free scroll tick as every other
+  // transform on this page — state-driven updates lag a frame behind and
+  // read as a stepped, artificial fade next to everything else.
+  const headerOpacityMV = useTransform(scrollYProgress, [...P_IN], [0, 1], { ease: [smoothstep] });
+
   // Header nav: scroll to the fully-arrived position of each section
   const handleNavigate = (target: "features" | "waitlist") => {
     const vh = window.innerHeight;
@@ -152,7 +165,7 @@ export default function Home() {
       ))}
 
       {/* ── Header — floats above all pages ──────────────────────────── */}
-      <Header onNavigate={handleNavigate} />
+      <Header onNavigate={handleNavigate} opacity={headerOpacityMV} />
 
       <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
 

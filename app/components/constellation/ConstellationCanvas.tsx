@@ -18,6 +18,9 @@ function smoothstep(e0: number, e1: number, x: number): number {
 // Stellar color classes: blue-white (hot), white, warm yellow, orange-red (cool).
 // Distribution roughly mirrors visible-sky star populations.
 const STAR_COLORS = ["#C8DBFF", "#EEF2F8", "#FFF0CA", "#FFBF80"] as const;
+// Cool giants (yellow/orange classes) render larger so spectral color reads
+// at these pixel sizes — opacity alone is too subtle to distinguish hues.
+const SPECTRAL_SIZE_MULT = [1.0, 1.0, 1.35, 1.6] as const;
 
 type BgStar = {
   x: number; y: number; r: number; opacity: number;
@@ -25,32 +28,88 @@ type BgStar = {
   freq: number; phase: number; twinkle: boolean;
 };
 
-function makeBgStars(n: number): BgStar[] {
+function makeBgStars(n: number, tier: "field" | "dust", seedBase = 0): BgStar[] {
   return Array.from({ length: n }, (_, i) => {
-    // Power-law size: cube the seed so most stars are tiny
-    const sizeSeed = sr(i * 7 + 2);
-    const r = 0.18 + sizeSeed * sizeSeed * sizeSeed * 2.2; // 0.18 – 2.38
-
-    // Base opacity scales with brightness (larger = brighter) + individual dimming
-    const brightness = 0.06 + (r / 2.38) * 0.55;
-    const dimSeed = sr(i * 7 + 6);
-    const opacity = brightness * (0.55 + dimSeed * 0.45);
-
+    const s = seedBase + i * 7;
     // Color: ~38% blue-white, ~37% white, ~16% warm-yellow, ~9% orange
-    const cs = sr(i * 7 + 7);
+    const cs = sr(s + 7);
     const colorIdx = cs < 0.38 ? 0 : cs < 0.75 ? 1 : cs < 0.91 ? 2 : 3;
+    const sizeMult = SPECTRAL_SIZE_MULT[colorIdx];
+
+    let r: number, opacity: number, twinkle: boolean;
+    if (tier === "dust") {
+      // Sub-pixel, individually near-invisible — collectively forms the
+      // faint grey undertone of unresolved background stars.
+      const sizeSeed = sr(s + 2);
+      r = (0.08 + sizeSeed * 0.07) * sizeMult;
+      opacity = 0.02 + sr(s + 6) * 0.04;
+      twinkle = false;
+    } else {
+      // Power-law size: cube the seed so most stars are tiny
+      const sizeSeed = sr(s + 2);
+      r = (0.18 + sizeSeed * sizeSeed * sizeSeed * 2.2) * sizeMult; // 0.18 – 3.8
+
+      // Base opacity scales with brightness (larger = brighter) + individual dimming
+      const brightness = 0.06 + (Math.min(r, 2.38) / 2.38) * 0.55;
+      const dimSeed = sr(s + 6);
+      opacity = brightness * (0.55 + dimSeed * 0.45);
+      twinkle = r > 0.75 && sr(s + 5) > 0.55; // only medium/large stars twinkle
+    }
 
     return {
-      x: sr(i * 7),
-      y: sr(i * 7 + 1),
+      x: sr(s),
+      y: sr(s + 1),
       r,
       opacity,
       colorIdx,
-      freq: 0.3 + sr(i * 7 + 3) * 0.9,
-      phase: sr(i * 7 + 4) * TAU,
-      twinkle: r > 0.75 && sr(i * 7 + 5) > 0.55, // only medium/large stars twinkle
+      freq: 0.3 + sr(s + 3) * 0.9,
+      phase: sr(s + 4) * TAU,
+      twinkle,
     };
   });
+}
+
+// Radial-gradient point source: peaks at centre, falls to transparent at the
+// edge, so stars bleed into the dark instead of reading as flat filled discs.
+function drawGlowStar(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, r: number, color: string, opacity: number,
+) {
+  const gradR = Math.max(r * 3, 0.75);
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, gradR);
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, `${color}00`);
+  ctx.globalAlpha = opacity;
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, gradR, 0, TAU);
+  ctx.fill();
+}
+
+// Three overlapping strokes (wide/faint -> narrow/bright) fake a luminous
+// line instead of a flat hairline rule.
+const GLOW_PASSES = [
+  { lw: 4,   a: 0.04 },
+  { lw: 1.5, a: 0.12 },
+  { lw: 0.6, a: 0.28 },
+] as const;
+
+function strokeGlowLine(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number, x2: number, y2: number,
+  color: string, alphaMult: number, dash: number[] = [],
+) {
+  ctx.setLineDash(dash);
+  ctx.strokeStyle = color;
+  for (const p of GLOW_PASSES) {
+    ctx.globalAlpha = p.a * alphaMult;
+    ctx.lineWidth = p.lw;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
 }
 
 export default function ConstellationCanvas({
@@ -65,6 +124,7 @@ export default function ConstellationCanvas({
   const pausedRef  = useRef(false);
   const reducedRef = useRef(false);
   const bgRef      = useRef<BgStar[]>([]);
+  const dustRef    = useRef<BgStar[]>([]);
   // Tracked via ref so `draw` stays stable across rapid resolveProgress updates
   const resolveRef = useRef<number | undefined>(undefined);
 
@@ -73,8 +133,11 @@ export default function ConstellationCanvas({
   // always "intersecting" the viewport, so the observer never paused anything.
   useEffect(() => {
     const init = () => {
-      // 280 stars on desktop, 110 on mobile — still well below performance concern
-      bgRef.current = makeBgStars(window.innerWidth < 768 ? 110 : 280);
+      // 550 field stars + 200 sub-pixel dust on desktop, 200/80 on mobile —
+      // still well below performance concern
+      const mobile = window.innerWidth < 768;
+      bgRef.current = makeBgStars(mobile ? 200 : 550, "field", 0);
+      dustRef.current = makeBgStars(mobile ? 80 : 200, "dust", 100000);
       reducedRef.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     };
     init();
@@ -111,15 +174,16 @@ export default function ConstellationCanvas({
     ctx.clearRect(0, 0, W, H);
 
     // — Ambient background stars (realistic density + spectral color)
+    // Dust layer first: sub-pixel, individually invisible, forms the
+    // continuous grey undertone real dark-sky fields have beneath point sources.
+    for (const s of dustRef.current) {
+      drawGlowStar(ctx, s.x * W, s.y * H, s.r, STAR_COLORS[s.colorIdx], s.opacity);
+    }
     for (const s of bgRef.current) {
       const twinkleMod = s.twinkle && !rm
         ? 0.7 + 0.3 * ((Math.sin(time * 0.001 * s.freq + s.phase) + 1) / 2)
         : 1;
-      ctx.globalAlpha = s.opacity * twinkleMod;
-      ctx.fillStyle = STAR_COLORS[s.colorIdx];
-      ctx.beginPath();
-      ctx.arc(s.x * W, s.y * H, s.r, 0, TAU);
-      ctx.fill();
+      drawGlowStar(ctx, s.x * W, s.y * H, s.r, STAR_COLORS[s.colorIdx], s.opacity * twinkleMod);
     }
     ctx.globalAlpha = 1;
 
@@ -155,16 +219,20 @@ export default function ConstellationCanvas({
         const fp = getPos(f, fi + idxOffset);
         const tp = getPos(t, ti + idxOffset);
         const hl = !!e.highlighted && (variant === "flagged" || variant === "overlay-diff");
-        ctx.globalAlpha = (hl ? hlAlpha : baseAlpha) * edgeMult;
-        ctx.strokeStyle = hl ? hlColor : baseColor;
-        ctx.lineWidth = hl ? 1.5 : 0.75;
-        ctx.setLineDash(dash);
-        ctx.beginPath();
-        ctx.moveTo(fp.x, fp.y);
-        ctx.lineTo(tp.x, tp.y);
-        ctx.stroke();
+        if (hl) {
+          ctx.globalAlpha = hlAlpha * edgeMult;
+          ctx.strokeStyle = hlColor;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash(dash);
+          ctx.beginPath();
+          ctx.moveTo(fp.x, fp.y);
+          ctx.lineTo(tp.x, tp.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else {
+          strokeGlowLine(ctx, fp.x, fp.y, tp.x, tp.y, baseColor, (baseAlpha / 0.22) * edgeMult, dash);
+        }
       }
-      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
     };
 
@@ -184,16 +252,19 @@ export default function ConstellationCanvas({
         const ti = points.findIndex(p => p.id === e.to);
         const fp = getPos(f, fi);
         const tp = getPos(t, ti);
-        ctx.globalAlpha = (e.highlighted ? 0.8 : 0.18) * edgeMult;
-        ctx.strokeStyle = e.highlighted ? accentColor : "#38BDF8";
-        ctx.lineWidth = e.highlighted ? 1.5 : 0.75;
-        ctx.setLineDash(e.highlighted ? [] : [3, 3]);
-        ctx.beginPath();
-        ctx.moveTo(fp.x, fp.y);
-        ctx.lineTo(tp.x, tp.y);
-        ctx.stroke();
+        if (e.highlighted) {
+          ctx.globalAlpha = 0.8 * edgeMult;
+          ctx.strokeStyle = accentColor;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(fp.x, fp.y);
+          ctx.lineTo(tp.x, tp.y);
+          ctx.stroke();
+        } else {
+          strokeGlowLine(ctx, fp.x, fp.y, tp.x, tp.y, "#38BDF8", (0.18 / 0.22) * edgeMult, [3, 3]);
+        }
       }
-      ctx.setLineDash([]);
       ctx.globalAlpha = 1;
     }
 
@@ -231,20 +302,17 @@ export default function ConstellationCanvas({
     // — Twin/ghost (Sandboxes)
     if (variant === "twin-ghost") {
       const off = 0.07;
-      ctx.globalAlpha = 0.18;
-      ctx.strokeStyle = "#818CF8";
-      ctx.lineWidth = 0.75;
-      ctx.setLineDash([4, 5]);
       for (const e of edges) {
         const f = pm.get(e.from);
         const t = pm.get(e.to);
         if (!f || !t) continue;
-        ctx.beginPath();
-        ctx.moveTo((f.x + off) * W, (f.y + off) * H);
-        ctx.lineTo((t.x + off) * W, (t.y + off) * H);
-        ctx.stroke();
+        strokeGlowLine(
+          ctx,
+          (f.x + off) * W, (f.y + off) * H,
+          (t.x + off) * W, (t.y + off) * H,
+          "#818CF8", 0.18 / 0.22, [4, 5],
+        );
       }
-      ctx.setLineDash([]);
       for (const p of points) {
         ctx.fillStyle = accentColor;
         ctx.globalAlpha = 0.22;

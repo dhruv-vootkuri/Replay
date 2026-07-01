@@ -1,15 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, useMotionValue, useTransform, useMotionTemplate, type MotionValue } from "framer-motion";
 
 export type NavTarget = "landing" | "problem" | "why" | "features" | "waitlist";
 
 interface HeaderProps {
   onNavigate?: (target: NavTarget) => void;
+  // 0 = fully transparent (Landing, first paint), 1 = fully opaque.
+  // A MotionValue (not plain state) so background/blur update on every
+  // scroll frame without a React re-render — state-driven updates read as
+  // stepped/laggy next to the rest of the page's motion-value-driven scroll.
+  opacity?: MotionValue<number>;
 }
 
-export default function Header({ onNavigate }: HeaderProps) {
-  const [scrolled, setScrolled] = useState(false);
+export default function Header({ onNavigate, opacity }: HeaderProps) {
+  const fallbackOpacity = useMotionValue(0);
+  const op = opacity ?? fallbackOpacity;
+
+  const bgAlpha     = useTransform(op, [0, 1], [0, 0.92]);
+  const blurPx      = useTransform(op, [0, 1], [0, 16]);
+  const borderAlpha = useTransform(op, [0, 1], [0, 0.06]);
+  const background     = useMotionTemplate`rgba(8, 12, 20, ${bgAlpha})`;
+  const backdropFilter = useMotionTemplate`blur(${blurPx}px)`;
+  const borderBottom   = useMotionTemplate`1px solid rgba(255,255,255,${borderAlpha})`;
+
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -17,14 +32,7 @@ export default function Header({ onNavigate }: HeaderProps) {
     setIsMobile(mq.matches);
     const h = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", h);
-
-    const onScroll = () => setScrolled(window.scrollY > 30);
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    return () => {
-      mq.removeEventListener("change", h);
-      window.removeEventListener("scroll", onScroll);
-    };
+    return () => mq.removeEventListener("change", h);
   }, []);
 
   const NAV_LINKS: { label: string; target: NavTarget }[] = [
@@ -34,31 +42,26 @@ export default function Header({ onNavigate }: HeaderProps) {
   ];
 
   return (
-    <header
+    <motion.header
       style={{
         position: "fixed",
-        top: 16,
-        left: "50%",
-        transform: "translateX(-50%)",
+        top: 0,
+        left: 0,
+        right: 0,
         zIndex: 200,
-        width: "calc(min(100% - 32px, 880px))",
         pointerEvents: "auto",
+        background,
+        backdropFilter,
+        WebkitBackdropFilter: backdropFilter,
+        borderBottom,
       }}
     >
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "9px 18px",
-          background: scrolled
-            ? "rgba(8, 12, 20, 0.88)"
-            : "rgba(8, 12, 20, 0.55)",
-          backdropFilter: "blur(18px)",
-          WebkitBackdropFilter: "blur(18px)",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          borderRadius: 10,
-          transition: "background 0.4s ease",
-          gap: 16,
+          padding: "18px 48px",
+          gap: 0,
         }}
       >
         {/* Wordmark */}
@@ -67,7 +70,7 @@ export default function Header({ onNavigate }: HeaderProps) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 7,
+            gap: 9,
             textDecoration: "none",
             flexShrink: 0,
           }}
@@ -104,7 +107,8 @@ export default function Header({ onNavigate }: HeaderProps) {
                 display: "flex",
                 alignItems: "center",
                 flex: 1,
-                justifyContent: "space-evenly",
+                gap: 44,
+                marginLeft: 56,
               }}
             >
               {NAV_LINKS.map((link) => (
@@ -114,18 +118,19 @@ export default function Header({ onNavigate }: HeaderProps) {
                   style={{
                     background: "none",
                     border: "none",
-                    padding: "6px 12px",
+                    padding: 0,
                     cursor: "pointer",
-                    fontFamily: "Outfit, sans-serif",
+                    fontFamily: "'IBM Plex Sans', sans-serif",
                     fontSize: "0.8125rem",
-                    color: "#FFFFFF",
-                    borderRadius: 6,
+                    fontWeight: 400,
+                    color: "#94A3B8",
+                    borderRadius: 0,
                     transition: "color 0.2s",
-                    letterSpacing: "0.005em",
+                    letterSpacing: "0.01em",
                     whiteSpace: "nowrap",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#38BDF8"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F1F5F9"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94A3B8"; }}
                 >
                   {link.label}
                 </button>
@@ -136,27 +141,24 @@ export default function Header({ onNavigate }: HeaderProps) {
               onClick={() => onNavigate?.("waitlist")}
               style={{
                 flexShrink: 0,
-                padding: "7px 16px",
-                background: "rgba(56, 189, 248, 0.12)",
+                padding: "5px 14px",
+                background: "transparent",
                 color: "#38BDF8",
-                border: "1px solid rgba(56, 189, 248, 0.25)",
-                borderRadius: 7,
-                fontFamily: "Syne, sans-serif",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
+                border: "1px solid #38BDF8",
+                borderRadius: 2,
+                fontFamily: "'IBM Plex Sans', sans-serif",
+                fontSize: "0.75rem",
+                fontWeight: 500,
                 cursor: "pointer",
-                letterSpacing: "0.01em",
-                transition: "background 0.2s, border-color 0.2s",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+                transition: "background 0.2s",
               }}
               onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(56, 189, 248, 0.18)";
-                el.style.borderColor = "rgba(56, 189, 248, 0.4)";
+                (e.currentTarget as HTMLElement).style.background = "rgba(56,189,248,0.07)";
               }}
               onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.background = "rgba(56, 189, 248, 0.12)";
-                el.style.borderColor = "rgba(56, 189, 248, 0.25)";
+                (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
               Request access
@@ -170,15 +172,17 @@ export default function Header({ onNavigate }: HeaderProps) {
             <button
               onClick={() => onNavigate?.("waitlist")}
               style={{
-                padding: "6px 14px",
-                background: "rgba(56, 189, 248, 0.12)",
+                padding: "5px 12px",
+                background: "transparent",
                 color: "#38BDF8",
-                border: "1px solid rgba(56, 189, 248, 0.25)",
-                borderRadius: 7,
-                fontFamily: "Syne, sans-serif",
-                fontSize: "0.8125rem",
-                fontWeight: 600,
+                border: "1px solid #38BDF8",
+                borderRadius: 2,
+                fontFamily: "'IBM Plex Sans', sans-serif",
+                fontSize: "0.75rem",
+                fontWeight: 500,
                 cursor: "pointer",
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
               }}
             >
               Request access
@@ -186,6 +190,6 @@ export default function Header({ onNavigate }: HeaderProps) {
           </div>
         )}
       </div>
-    </header>
+    </motion.header>
   );
 }

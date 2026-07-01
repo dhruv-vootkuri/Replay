@@ -4,13 +4,52 @@ import { useId, useEffect, useRef, useState } from "react";
 import { motion, useAnimationFrame } from "framer-motion";
 import type { ConstellationProps, StarPoint, Edge } from "./types";
 
-// Deterministic pseudo-random
+// Deterministic pseudo-random. Integer-only hash (no Math.sin) so SSR and
+// client hydration produce bit-identical floats — Math.sin's last bits can
+// differ between the server and browser JS engines, which broke hydration
+// once these values started feeding raw SVG attributes (cx/cy/r/opacity)
+// instead of just animation timing.
 function sr(seed: number): number {
-  const x = Math.sin(seed + 1) * 10000;
-  return x - Math.floor(x);
+  let t = (Math.floor(seed) ^ 0x9e3779b9) | 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
 const S = (v: number) => v * 100; // 0-1 → 0-100 SVG units
+
+// Same 4 spectral classes as the canvas ambient field, kept mild here —
+// panels are small, so oversized warm stars read as blotches, not stars.
+const BG_STAR_COLORS = ["#C8DBFF", "#EEF2F8", "#FFF0CA", "#FFBF80"] as const;
+const BG_SPECTRAL_MULT = [1.0, 1.0, 1.15, 1.3] as const;
+
+type BgDot = { x: number; y: number; r: number; opacity: number; colorIdx: number };
+
+function makeBgDots(n: number, seedBase: number, tier: "field" | "dust"): BgDot[] {
+  return Array.from({ length: n }, (_, i) => {
+    const s = seedBase + i * 7;
+    const cs = sr(s + 7);
+    const colorIdx = cs < 0.38 ? 0 : cs < 0.75 ? 1 : cs < 0.91 ? 2 : 3;
+    const mult = BG_SPECTRAL_MULT[colorIdx];
+    const sizeSeed = sr(s + 2);
+
+    let r: number, opacity: number;
+    if (tier === "dust") {
+      r = (0.12 + sizeSeed * 0.13) * mult; // sub-pixel grey undertone
+      opacity = 0.04 + sr(s + 6) * 0.06;
+    } else {
+      r = (0.3 + sizeSeed * sizeSeed * 0.75) * mult; // ~0.3–1.05 SVG units
+      const brightness = 0.15 + sizeSeed * 0.35;
+      opacity = brightness * (0.6 + sr(s + 6) * 0.4);
+    }
+
+    return { x: S(sr(s)), y: S(sr(s + 1)), r, opacity, colorIdx };
+  });
+}
+
+// Generated once at module load — shared, static field behind every instance.
+const BG_DUST_STARS  = makeBgDots(45, 5000, "dust");
+const BG_FIELD_STARS = makeBgDots(75, 0, "field");
 
 function buildEdgeWaypoints(points: StarPoint[], edges: Edge[]): { x: number; y: number }[] {
   if (edges.length === 0) return [];
@@ -129,11 +168,25 @@ export default function ConstellationSVG({
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
+        <filter id={`${glowId}-bgstar`} x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="0.45" />
+        </filter>
       </defs>
+
+      {/* Ambient background field — gives the small per-tab panel the same
+          depth/density the full-page canvas ambient background has. */}
+      <g filter={`url(#${glowId}-bgstar)`}>
+        {BG_DUST_STARS.map((s, i) => (
+          <circle key={`dust-${i}`} cx={s.x} cy={s.y} r={s.r} fill={BG_STAR_COLORS[s.colorIdx]} opacity={s.opacity} />
+        ))}
+        {BG_FIELD_STARS.map((s, i) => (
+          <circle key={`bg-${i}`} cx={s.x} cy={s.y} r={s.r} fill={BG_STAR_COLORS[s.colorIdx]} opacity={s.opacity} />
+        ))}
+      </g>
 
       {/* Ghost layer (Sandboxes) */}
       {variant === "twin-ghost" && (
-        <g opacity={0.22} transform={`translate(${GHOST_OFFSET}, ${GHOST_OFFSET})`}>
+        <g opacity={0.32} transform={`translate(${GHOST_OFFSET}, ${GHOST_OFFSET})`} filter={`url(#${glowId}-soft)`}>
           {edges.map((e, i) => {
             const f = pm.get(e.from);
             const t = pm.get(e.to);
@@ -195,22 +248,24 @@ export default function ConstellationSVG({
       })()}
 
       {/* Primary edges */}
-      {edges.map((e, i) => {
-        const f = pm.get(e.from);
-        const t = pm.get(e.to);
-        if (!f || !t) return null;
-        const hl = !!e.highlighted && (variant === "flagged" || variant === "overlay-diff");
-        return (
-          <line
-            key={`edge-${i}`}
-            x1={S(f.x)} y1={S(f.y)}
-            x2={S(t.x)} y2={S(t.y)}
-            stroke={hl ? accentColor : "#38BDF8"}
-            strokeWidth={hl ? 1.2 : 0.6}
-            strokeOpacity={hl ? 0.85 : state === "unresolved" ? 0.12 : 0.22}
-          />
-        );
-      })}
+      <g filter={`url(#${glowId}-soft)`}>
+        {edges.map((e, i) => {
+          const f = pm.get(e.from);
+          const t = pm.get(e.to);
+          if (!f || !t) return null;
+          const hl = !!e.highlighted && (variant === "flagged" || variant === "overlay-diff");
+          return (
+            <line
+              key={`edge-${i}`}
+              x1={S(f.x)} y1={S(f.y)}
+              x2={S(t.x)} y2={S(t.y)}
+              stroke={hl ? accentColor : "#38BDF8"}
+              strokeWidth={hl ? 1.2 : 0.6}
+              strokeOpacity={hl ? 0.85 : state === "unresolved" ? 0.12 : 0.22}
+            />
+          );
+        })}
+      </g>
 
       {/* Overlay edges (Pressure Tests) */}
       {variant === "overlay-diff" && overlayEdges && overlayPoints && (() => {
@@ -218,22 +273,26 @@ export default function ConstellationSVG({
           ...pm.entries(),
           ...overlayPoints.map(p => [p.id, p] as [string, StarPoint]),
         ]);
-        return overlayEdges.map((e, i) => {
-          const f = opm.get(e.from);
-          const t = opm.get(e.to);
-          if (!f || !t) return null;
-          return (
-            <line
-              key={`ov-edge-${i}`}
-              x1={S(f.x)} y1={S(f.y)}
-              x2={S(t.x)} y2={S(t.y)}
-              stroke={e.highlighted ? accentColor : "#38BDF8"}
-              strokeWidth={e.highlighted ? 1.2 : 0.5}
-              strokeOpacity={e.highlighted ? 0.85 : 0.15}
-              strokeDasharray={e.highlighted ? undefined : "2 3"}
-            />
-          );
-        });
+        return (
+          <g filter={`url(#${glowId}-soft)`}>
+            {overlayEdges.map((e, i) => {
+              const f = opm.get(e.from);
+              const t = opm.get(e.to);
+              if (!f || !t) return null;
+              return (
+                <line
+                  key={`ov-edge-${i}`}
+                  x1={S(f.x)} y1={S(f.y)}
+                  x2={S(t.x)} y2={S(t.y)}
+                  stroke={e.highlighted ? accentColor : "#38BDF8"}
+                  strokeWidth={e.highlighted ? 1.2 : 0.5}
+                  strokeOpacity={e.highlighted ? 0.85 : 0.15}
+                  strokeDasharray={e.highlighted ? undefined : "2 3"}
+                />
+              );
+            })}
+          </g>
+        );
       })()}
 
       {/* Stars */}
