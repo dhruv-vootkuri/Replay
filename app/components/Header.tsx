@@ -79,7 +79,7 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
             onNavigate?.("landing");
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <circle cx="4" cy="9" r="2" fill="#38BDF8" opacity="0.85" />
             <circle cx="14" cy="5" r="1.5" fill="#38BDF8" opacity="0.55" />
             <circle cx="14" cy="13" r="1.5" fill="#38BDF8" opacity="0.55" />
@@ -88,8 +88,8 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
           </svg>
           <span
             style={{
-              fontFamily: "Syne, sans-serif",
-              fontSize: "0.9375rem",
+              fontFamily: "var(--font-display)",
+              fontSize: "1.25rem",
               fontWeight: 700,
               color: "#FFFFFF",
               letterSpacing: "-0.01em",
@@ -120,17 +120,17 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
                     border: "none",
                     padding: 0,
                     cursor: "pointer",
-                    fontFamily: "'IBM Plex Sans', sans-serif",
-                    fontSize: "0.8125rem",
+                    fontFamily: "var(--font-body)",
+                    fontSize: "1rem",
                     fontWeight: 400,
-                    color: "#94A3B8",
+                    color: "#FFFFFF",
                     borderRadius: 0,
                     transition: "color 0.2s",
-                    letterSpacing: "0.01em",
+                    letterSpacing: "0.012em",
                     whiteSpace: "nowrap",
                   }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#F1F5F9"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#94A3B8"; }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#38BDF8"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
                 >
                   {link.label}
                 </button>
@@ -141,24 +141,28 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
               onClick={() => onNavigate?.("waitlist")}
               style={{
                 flexShrink: 0,
-                padding: "5px 14px",
+                padding: "6px 16px",
                 background: "transparent",
                 color: "#38BDF8",
                 border: "1px solid #38BDF8",
                 borderRadius: 2,
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: "0.75rem",
+                fontFamily: "var(--font-body)",
+                fontSize: "0.875rem",
                 fontWeight: 500,
                 cursor: "pointer",
                 letterSpacing: "0.04em",
                 textTransform: "uppercase",
-                transition: "background 0.2s",
+                transition: "color 0.2s, border-color 0.2s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(56,189,248,0.07)";
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = "#FFFFFF";
+                el.style.borderColor = "#FFFFFF";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
+                const el = e.currentTarget as HTMLElement;
+                el.style.color = "#38BDF8";
+                el.style.borderColor = "#38BDF8";
               }}
             >
               Request access
@@ -172,13 +176,13 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
             <button
               onClick={() => onNavigate?.("waitlist")}
               style={{
-                padding: "5px 12px",
+                padding: "6px 14px",
                 background: "transparent",
                 color: "#38BDF8",
                 border: "1px solid #38BDF8",
                 borderRadius: 2,
-                fontFamily: "'IBM Plex Sans', sans-serif",
-                fontSize: "0.75rem",
+                fontFamily: "var(--font-body)",
+                fontSize: "0.875rem",
                 fontWeight: 500,
                 cursor: "pointer",
                 letterSpacing: "0.04em",

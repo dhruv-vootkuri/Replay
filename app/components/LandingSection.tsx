@@ -5,11 +5,30 @@ import { motion } from "framer-motion";
 
 const FADE_WINDOW = 2;
 
-export default function LandingSection({ canvasPaused }: { canvasPaused?: boolean }) {
+interface LandingSectionProps {
+  canvasPaused?: boolean;
+  // True once the user has started scrolling away from Landing. The resolve
+  // sequence is normally paced by hero-video playback time, but that has no
+  // relationship to scroll — a user who scrolls before the video reaches its
+  // fade window would leave Landing without ever seeing the headline resolve.
+  // Forcing rp to 1 here guarantees it's visible by the time they leave.
+  forceResolved?: boolean;
+}
+
+export default function LandingSection({ canvasPaused, forceResolved }: LandingSectionProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [rp, setRp]       = useState(0);
   const rpRef             = useRef(0);
+  const forceResolvedRef  = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (forceResolved && rpRef.current < 1) {
+      forceResolvedRef.current = true;
+      rpRef.current = 1;
+      setRp(1);
+    }
+  }, [forceResolved]);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -26,6 +45,7 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      if (forceResolvedRef.current) return; // scroll already forced full resolve — stop tracking video time
       if (!video.duration) return;
       const fadeStart = video.duration - FADE_WINDOW;
       const next = Math.max(0, Math.min(1, (video.currentTime - fadeStart) / FADE_WINDOW));
@@ -41,14 +61,19 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
 
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
 
-  const headlineOpacity = clamp(rp / 0.55);
+  // Reveal trigger points normalized to a shared target: the headline
+  // reaches full opacity at exactly 50% of this page's own reveal timer,
+  // matching Problem/Market Gap/Waitlist. Every other element's start/full
+  // point rescaled proportionally from its old value and rounded to the
+  // nearest 5% -- no leftover per-page magic decimals.
+  const headlineOpacity = clamp(rp / 0.50);
   const headlineBlur    = (1 - headlineOpacity) * 12;
-  const subheadOpacity  = clamp((rp - 0.2)  / 0.45);
-  const ctaOpacity      = clamp((rp - 0.42) / 0.38);
+  const subheadOpacity  = clamp((rp - 0.20) / 0.40);
+  const ctaOpacity      = clamp((rp - 0.40) / 0.35);
   const ctaY            = (1 - ctaOpacity) * 6;
-  const guideOpacity    = clamp((rp - 0.6)  / 0.3);
+  const guideOpacity    = clamp((rp - 0.55) / 0.25);
   const guideY          = (1 - guideOpacity) * 8;
-  const audOpacity      = clamp((rp - 0.72) / 0.28);
+  const audOpacity      = clamp((rp - 0.65) / 0.25);
   const scrollOpacity   = rp >= 1 ? 0.4 : 0;
 
   return (
@@ -110,12 +135,12 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
           {/* "let us guide you" */}
           <div
             style={{
-              fontFamily: "Space Mono, monospace",
+              fontFamily: "var(--font-mono)",
               fontSize: "0.6875rem",
-              letterSpacing: "0.22em",
+              letterSpacing: "0.2em",
               textTransform: "uppercase",
               color: "#38BDF8",
-              marginBottom: 20,
+              marginBottom: 15,
               height: "1.4em",
               opacity: guideOpacity,
               transform: `translateY(${guideY}px)`,
@@ -126,10 +151,10 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
 
           <h1
             style={{
-              fontFamily: "Syne, sans-serif",
-              fontSize: isMobile ? "clamp(2rem, 8.5vw, 3rem)" : "clamp(2.4rem, 3.8vw, 4rem)",
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(2.25rem, 6vw, 4.5rem)",
               fontWeight: 700,
-              lineHeight: 1.06,
+              lineHeight: 1.08,
               color: "#FFFFFF",
               marginBottom: 22,
               opacity: headlineOpacity,
@@ -146,8 +171,8 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
 
           <p
             style={{
-              fontFamily: "Outfit, sans-serif",
-              fontSize: "clamp(0.9375rem, 1.4vw, 1.0625rem)",
+              fontFamily: "var(--font-body)",
+              fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
               lineHeight: 1.7,
               color: "#FFFFFF",
               maxWidth: 460,
@@ -155,8 +180,8 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
               opacity: subheadOpacity,
             }}
           >
-            Alioth makes every agent decision legible — what it chose, why it
-            chose it, and whether it would choose the same thing again.
+            Alioth makes every agent decision legible, and tells you whether it
+            would make the same one again.
           </p>
 
           <a
@@ -169,7 +194,7 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
               background: "#38BDF8",
               color: "#080C14",
               borderRadius: 7,
-              fontFamily: "Syne, sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: "0.9375rem",
               fontWeight: 600,
               letterSpacing: "0.01em",
@@ -186,7 +211,7 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
 
           <p
             style={{
-              fontFamily: "Outfit, sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: "0.8125rem",
               color: "#FFFFFF",
               opacity: audOpacity,
@@ -213,7 +238,7 @@ export default function LandingSection({ canvasPaused }: { canvasPaused?: boolea
         }}
       >
         <p style={{
-          fontFamily: "Space Mono, monospace",
+          fontFamily: "var(--font-mono)",
           fontSize: "0.625rem",
           letterSpacing: "0.2em",
           textTransform: "uppercase",

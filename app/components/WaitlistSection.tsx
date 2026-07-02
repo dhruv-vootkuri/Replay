@@ -11,15 +11,30 @@ const RESOLVE_DURATION = 1200;
 interface WaitlistSectionProps {
   isActive?: boolean;
   canvasPaused?: boolean;
+  // True once scroll has carried this section to its own fully-arrived
+  // position (see the identical mechanism in LandingSection/WhySection).
+  // Without this, a fast scroll straight to the bottom of the page can
+  // outrun the fixed-duration reveal timer, leaving the headline, eyebrow,
+  // and CTA copy sitting at opacity 0 with nothing else after this section
+  // to scroll to.
+  forceResolved?: boolean;
 }
 
-export default function WaitlistSection({ isActive = false, canvasPaused }: WaitlistSectionProps) {
+export default function WaitlistSection({ isActive = false, canvasPaused, forceResolved }: WaitlistSectionProps) {
   const rm          = useReducedMotion() ?? false;
   const startedRef  = useRef(false);
+  const forceResolvedRef = useRef(false);
   const [rp, setRp] = useState(0);
   const [email, setEmail]         = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [focused, setFocused]     = useState(false);
+
+  useEffect(() => {
+    if (forceResolved) {
+      forceResolvedRef.current = true;
+      setRp(1);
+    }
+  }, [forceResolved]);
 
   useEffect(() => {
     if (!isActive || startedRef.current) return;
@@ -30,6 +45,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
     let raf: number;
 
     const tick = (ts: number) => {
+      if (forceResolvedRef.current) return; // scroll already forced full resolve — stop tracking wall-clock time
       if (start === undefined) start = ts;
       const t = Math.min((ts - start) / RESOLVE_DURATION, 1);
       setRp(t);
@@ -39,6 +55,21 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
     const timer = setTimeout(() => { raf = requestAnimationFrame(tick); }, RESOLVE_DELAY);
     return () => { clearTimeout(timer); cancelAnimationFrame(raf); };
   }, [isActive, rm]);
+
+  const c    = (v: number) => Math.max(0, Math.min(1, v));
+  const ease = (x: number) => { const t = c(x); return t * t * (3 - 2 * t); };
+
+  // Reveal trigger points normalized: headline (h2Op) reaches full opacity
+  // at exactly 50% of this page's own reveal timer, matching Landing/
+  // Problem/Market Gap. Continuous eases replace the old binary rp>X
+  // threshold snaps (which had no gradual ramp at all). Every value below
+  // is a clean multiple of 5%.
+  const eyebrowOp = ease(c(rp / 0.35));
+  const h2Op      = ease(c((rp - 0.10) / 0.40));
+  const h2Y       = (1 - h2Op) * 10;
+  const bodyOp    = ease(c((rp - 0.25) / 0.35));
+  const formOp    = ease(c((rp - 0.40) / 0.35));
+  const formY     = (1 - formOp) * 8;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,62 +120,55 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
           padding: "0 24px 100px",
         }}
       >
-        <motion.p
-          animate={{ opacity: rp > 0.5 ? 1 : 0 }}
-          transition={{ duration: 0.6 }}
+        <p
           style={{
-            fontFamily: "Space Mono, monospace",
+            fontFamily: "var(--font-mono)",
             fontSize: "0.6875rem",
-            letterSpacing: "0.22em",
+            letterSpacing: "0.2em",
             textTransform: "uppercase",
             color: "#38BDF8",
-            opacity: 0,
-            marginBottom: 28,
+            opacity: eyebrowOp,
+            marginBottom: 15,
           }}
         >
           Early access
-        </motion.p>
+        </p>
 
-        <motion.h2
-          animate={{ opacity: rp > 0.6 ? 1 : 0, y: rp > 0.6 ? 0 : 10 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        <h2
           style={{
-            fontFamily: "Syne, sans-serif",
-            fontSize: "clamp(2rem, 5vw, 3.75rem)",
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(2rem, 4.5vw, 3.5rem)",
             fontWeight: 700,
             lineHeight: 1.08,
             color: "#FFFFFF",
             marginBottom: 16,
             maxWidth: 620,
-            opacity: 0,
+            opacity: h2Op,
+            transform: `translateY(${h2Y}px)`,
           }}
         >
           The guidance is
           <br />
           available to you now.
-        </motion.h2>
+        </h2>
 
-        <motion.p
-          animate={{ opacity: rp > 0.75 ? 1 : 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+        <p
           style={{
-            fontFamily: "Outfit, sans-serif",
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.0625rem)",
+            fontFamily: "var(--font-body)",
+            fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
             lineHeight: 1.7,
             color: "#FFFFFF",
             marginBottom: 44,
             maxWidth: 420,
-            opacity: 0,
+            opacity: bodyOp,
           }}
         >
           Early access is open for engineering teams
           building agentic workflows.
-        </motion.p>
+        </p>
 
-        <motion.div
-          animate={{ opacity: rp > 0.8 ? 1 : 0, y: rp > 0.8 ? 0 : 8 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          style={{ width: "100%", maxWidth: 480, opacity: 0 }}
+        <div
+          style={{ width: "100%", maxWidth: 480, opacity: formOp, transform: `translateY(${formY}px)` }}
         >
           <AnimatePresence mode="wait">
             {!submitted ? (
@@ -188,7 +212,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
                       border: `1px solid ${focused ? "#38BDF8" : "#1E293B"}`,
                       borderRadius: 6,
                       color: "#FFFFFF",
-                      fontFamily: "Outfit, sans-serif",
+                      fontFamily: "var(--font-body)",
                       fontSize: "0.9375rem",
                       outline: "none",
                       transition: "border-color 0.2s",
@@ -203,7 +227,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
                       color: "#080C14",
                       border: "none",
                       borderRadius: 6,
-                      fontFamily: "Syne, sans-serif",
+                      fontFamily: "var(--font-body)",
                       fontSize: "0.9375rem",
                       fontWeight: 600,
                       letterSpacing: "0.02em",
@@ -217,7 +241,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
 
                 <p
                   style={{
-                    fontFamily: "Outfit, sans-serif",
+                    fontFamily: "var(--font-body)",
                     fontSize: "0.75rem",
                     color: "#FFFFFF",
                     marginTop: 4,
@@ -263,7 +287,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
                 </div>
                 <p
                   style={{
-                    fontFamily: "Syne, sans-serif",
+                    fontFamily: "var(--font-display)",
                     fontSize: "1rem",
                     fontWeight: 500,
                     color: "#FFFFFF",
@@ -273,7 +297,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
                 </p>
                 <p
                   style={{
-                    fontFamily: "Outfit, sans-serif",
+                    fontFamily: "var(--font-body)",
                     fontSize: "0.875rem",
                     color: "#FFFFFF",
                   }}
@@ -284,7 +308,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       </div>
 
       {/* ── Footer ── */}
@@ -312,7 +336,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
               key={label}
               href="#"
               style={{
-                fontFamily: "Outfit, sans-serif",
+                fontFamily: "var(--font-body)",
                 fontSize: "0.8125rem",
                 color: "rgba(255,255,255,0.72)",
                 textDecoration: "none",
@@ -327,7 +351,7 @@ export default function WaitlistSection({ isActive = false, canvasPaused }: Wait
         </nav>
 
         {/* Copyright */}
-        <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "0.6875rem", color: "rgba(255,255,255,0.42)", letterSpacing: "0.02em" }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.6875rem", color: "rgba(255,255,255,0.42)", letterSpacing: "0.02em" }}>
           © 2026 Alioth
         </p>
       </div>

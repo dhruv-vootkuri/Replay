@@ -48,7 +48,7 @@ const TABS: TabDef[] = [
     overlayPoints: pressureOverlayPoints,
     overlayEdges: pressureOverlayEdges,
     heading: "Re-run the exact moment.",
-    body: "Pick any trace, swap one input variable, and re-run it. The overlaid diff view shows precisely where the agent's path diverged from the original. No reproducing from scratch. No guessing which input caused it.",
+    body: "Pick a single trace, multiselect a batch, or target everything tagged 'checkout-flow' — swap one input, and re-run against the new system. The overlaid diff shows precisely where the agent's path diverged, plus the runtime and compute cost of getting there. No guessing which input caused it.",
   },
   {
     id: "sandboxes",
@@ -58,7 +58,7 @@ const TABS: TabDef[] = [
     edges: sandboxEdges,
     variant: "twin-ghost",
     heading: "Test without touching production.",
-    body: "Snapshot your full agent environment — tools, memory, system prompt, external calls — into an isolated clone. Run destructive experiments or validate a fix. The live system is never touched. Takes about 30 seconds to spin up.",
+    body: "Snapshot your full agent environment — tools, memory, system prompt, storage — into an isolated clone with ergonomic DB compatibility. Anything flagged unsafe or compute-heavy gets swapped for a cached closest-match response automatically, so destructive calls never reach production. Takes about 30 seconds to spin up, and the clone is discarded once tests pass.",
   },
   {
     id: "agent",
@@ -68,7 +68,7 @@ const TABS: TabDef[] = [
     edges: agentEdges,
     variant: "traveling-point",
     heading: "Infrastructure that audits itself.",
-    body: "Alioth's monitoring agent traverses your agentic graph on a continuous loop, comparing current behavior against a baseline. It surfaces drift and flags regressions before your users notice — and before you're debugging at 2 a.m.",
+    body: "Alioth's agent plugs directly into your infrastructure — not a dashboard bolted on top — and re-runs pressure tests against your live graph on a continuous loop, without a human queuing them up. It catches the same drift Insights would flag, before your users do.",
   },
 ];
 
@@ -99,12 +99,17 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
   const rm  = useReducedMotion() ?? false;
   const pct = tabScrollProgress;
 
-  // One-shot RAF progress per tab — all fire the same way, just triggered at different times
-  const startedRef = useRef([false, false, false, false]);
+  // Tab 0 has no scroll-driven entrance (it's already on screen the moment
+  // Features arrives), so its caption stagger stays a one-shot RAF reveal
+  // triggered by isActive. Tabs 1–3 used to run the identical one-shot
+  // reveal, triggered once scroll crossed 92% into that tab's entrance — but
+  // the reveal takes 720ms to finish while the tab's own graphic position is
+  // driven continuously by scroll, so pausing anywhere past 90% (or scrolling
+  // faster than the reveal) showed a fully-formed constellation with blank
+  // caption text. Tabs 1–3 now derive their stagger directly from the same
+  // continuous rawProgress driving the graphic, so both finish together.
+  const startedRef = useRef(false);
   const [rp0, setRp0] = useState(0);
-  const [rp1, setRp1] = useState(0);
-  const [rp2, setRp2] = useState(0);
-  const [rp3, setRp3] = useState(0);
 
   function fireReveal(setter: (v: number) => void, reducedMotion: boolean) {
     if (reducedMotion) { setter(1); return; }
@@ -120,20 +125,10 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
 
   // Tab 0: fires when the Features section arrives
   useEffect(() => {
-    if (!isActive || startedRef.current[0]) return;
-    startedRef.current[0] = true;
+    if (!isActive || startedRef.current) return;
+    startedRef.current = true;
     fireReveal(setRp0, rm);
   }, [isActive, rm]);
-
-  // Tabs 1–3: fire once each tab has scrolled at least 92% into view
-  useEffect(() => {
-    const setters = [setRp0, setRp1, setRp2, setRp3];
-    [1, 2, 3].forEach(k => {
-      if (startedRef.current[k] || rawProgress(k, pct) < 0.92) return;
-      startedRef.current[k] = true;
-      fireReveal(setters[k], rm);
-    });
-  }, [pct, rm]);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -144,8 +139,6 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
     return () => mq.removeEventListener("change", h);
   }, []);
 
-  const rpArr = [rp0, rp1, rp2, rp3];
-
   return (
     <section id="features" style={{ height: "100%", position: "relative", overflow: "hidden", background: "#080C14" }}>
 
@@ -154,13 +147,23 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
         const tx         = rm ? 0 : (1 - smoothstep(rp)) * 100;
         const tabOpacity = rm ? smoothstep(rp) : 1;
 
-        // Each tab's stagger progress is its own RAF-driven value (0→1)
-        const p = smoothstep(rpArr[k]);
+        // Tab 0's stagger is the isActive-triggered one-shot; tabs 1–3 derive
+        // theirs from the last 30% of their own scroll-driven entrance so the
+        // caption always finishes exactly when the graphic does.
+        const p = k === 0 ? smoothstep(rp0) : sg(rp, 0.7, 1);
 
-        const a1 = sg(p, 0.00, 0.36); const y1 = (1 - a1) * 12;
-        const a2 = sg(p, 0.10, 0.45); const y2 = (1 - a2) * 12;
-        const a3 = sg(p, 0.22, 0.58); const y3 = (1 - a3) * 12;
-        const a4 = sg(p, 0.38, 0.72); const y4 = (1 - a4) * 10;
+        // Tab 0's heading (a3) reaches full opacity at exactly 50% of its own
+        // reveal timer (p), matching Landing/Problem/Market Gap/Waitlist. For
+        // tabs 1-3 this shifts their effective trigger only marginally
+        // (~87%->~85% of their real scroll-driven entrance, still safely
+        // inside the "graphic already visually settled" zone) since the
+        // outer 0.7-1 compression above -- not these percentages -- is what
+        // actually governs their timing. Every value below is a clean
+        // multiple of 5%.
+        const a1 = sg(p, 0.00, 0.30); const y1 = (1 - a1) * 12;
+        const a2 = sg(p, 0.10, 0.40); const y2 = (1 - a2) * 12;
+        const a3 = sg(p, 0.20, 0.50); const y3 = (1 - a3) * 12;
+        const a4 = sg(p, 0.35, 0.60); const y4 = (1 - a4) * 10;
 
         return (
           <div
@@ -181,7 +184,7 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
             {/* Sliver strip — desktop only */}
             {!isMobile && (
               <div style={{ position: "absolute", left: 0, top: 0, width: SLIVER - 3, height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "Syne, sans-serif", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: tab.accent, writingMode: "vertical-rl", transform: "rotate(180deg)", userSelect: "none", opacity: 0.9 }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: tab.accent, writingMode: "vertical-rl", transform: "rotate(180deg)", userSelect: "none", opacity: 0.9 }}>
                   {tab.label}
                 </span>
               </div>
@@ -193,10 +196,10 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
                   <Constellation mode="svg" points={tab.points} edges={tab.edges} state="resolved" variant={tab.variant} accentColor={tab.accent} overlayPoints={tab.overlayPoints} overlayEdges={tab.overlayEdges} paused={canvasPaused} />
                 </div>
                 <div style={{ textAlign: "center", maxWidth: 340 }}>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 8, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.625rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 12, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
-                  <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.25rem, 5vw, 1.625rem)", fontWeight: 600, lineHeight: 1.15, color: "#FFFFFF", marginBottom: 14, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
-                  <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "0.9375rem", lineHeight: 1.65, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 7, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 12, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.25rem, 5vw, 1.625rem)", fontWeight: 700, lineHeight: 1.15, color: "#FFFFFF", marginBottom: 14, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "0.9375rem", lineHeight: 1.65, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>
                 </div>
               </div>
             ) : (
@@ -210,10 +213,10 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
                 <div style={{ width: 1, height: "46%", background: "#1E293B", flexShrink: 0 }} />
 
                 <div style={{ flex: 1, padding: "0 52px 0 44px", maxWidth: 500 }}>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.5625rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 10, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
-                  <p style={{ fontFamily: "Space Mono, monospace", fontSize: "0.6875rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 18, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
-                  <h3 style={{ fontFamily: "Syne, sans-serif", fontSize: "clamp(1.375rem, 2vw, 2rem)", fontWeight: 600, lineHeight: 1.1, color: "#FFFFFF", marginBottom: 20, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
-                  <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "clamp(0.9375rem, 1.25vw, 1.0625rem)", lineHeight: 1.75, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 7.5, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 18, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.375rem, 2vw, 2rem)", fontWeight: 700, lineHeight: 1.1, color: "#FFFFFF", marginBottom: 20, opacity: a3, transform: `translateY(${y3}px)` }}>{tab.heading}</h3>
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)", lineHeight: 1.75, color: "#FFFFFF", opacity: a4, transform: `translateY(${y4}px)` }}>{tab.body}</p>
                 </div>
               </div>
             )}

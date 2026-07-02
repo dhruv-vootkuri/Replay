@@ -35,9 +35,9 @@
 ---
 
 ## Typefaces
-- **Display:** Space Grotesk (weights 300–700) — geometric, technically credible, distinctive letterforms
-- **Body:** IBM Plex Sans (weights 300–600 + italic) — IBM technical authority, legible at small sizes
-- **Mono:** IBM Plex Mono — for trace IDs, technical labels, code detail text
+- **Display:** Syne (weights 400–700) — geometric, high-contrast, distinctive letterforms
+- **Body:** Outfit (weights 300–700) — clean, neutral, legible at small sizes
+- **Mono:** Space Mono — for trace IDs, technical labels, code detail text
 
 ---
 

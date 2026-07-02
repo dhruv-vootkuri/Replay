@@ -22,7 +22,7 @@ function CellVal({ v }: { v: boolean | "partial" }) {
   if (v === true)  return <span style={{ color: "#FFFFFF" }}>✓</span>;
   if (v === "partial")
     return (
-      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.5625rem", letterSpacing: "0.1em", fontFamily: "Space Mono, monospace", textTransform: "uppercase" }}>
+      <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.5625rem", letterSpacing: "0.1em", fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>
         partial
       </span>
     );
@@ -32,12 +32,28 @@ function CellVal({ v }: { v: boolean | "partial" }) {
 interface WhySectionProps {
   canvasPaused?: boolean;
   isActive?: boolean;
+  // True once scroll has carried this section to its own fully-arrived
+  // position. The reveal is normally paced by a fixed-duration timer
+  // started when the section becomes active, which has no relationship to
+  // scroll speed — a fast scroll through the entrance + hold window can
+  // outrun it, leaving the comparison table sitting at opacity 0. Forcing
+  // rp to 1 here guarantees the content is visible by the time the section
+  // is actually in its resting position.
+  forceResolved?: boolean;
 }
 
-export default function WhySection({ canvasPaused, isActive = false }: WhySectionProps) {
+export default function WhySection({ canvasPaused, isActive = false, forceResolved }: WhySectionProps) {
   const rm = useReducedMotion() ?? false;
   const startedRef = useRef(false);
+  const forceResolvedRef = useRef(false);
   const [rp, setRp] = useState(0);
+
+  useEffect(() => {
+    if (forceResolved) {
+      forceResolvedRef.current = true;
+      setRp(1);
+    }
+  }, [forceResolved]);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -56,6 +72,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
     let start: number | undefined;
     let raf: number;
     const tick = (ts: number) => {
+      if (forceResolvedRef.current) return; // scroll already forced full resolve — stop tracking wall-clock time
       if (start === undefined) start = ts;
       const t = Math.min((ts - start) / RESOLVE_DURATION, 1);
       setRp(t);
@@ -68,20 +85,24 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
   const c = (v: number) => Math.max(0, Math.min(1, v));
   const ease = (x: number) => { const t = c(x); return t * t * (3 - 2 * t); };
 
+  // Reveal trigger points normalized: headline (h2Op) reaches full opacity
+  // at exactly 50% of this page's own reveal timer, matching Landing/Problem/
+  // Waitlist. Every value below is a clean multiple of 5%.
+
   // Left column
   const labelOp = ease(c(rp / 0.35));
   const labelY  = (1 - labelOp) * 14;
-  const h2Op    = ease(c((rp - 0.1) / 0.36));
+  const h2Op    = ease(c((rp - 0.10) / 0.40));
   const h2Y     = (1 - h2Op) * 14;
-  const p1Op    = ease(c((rp - 0.24) / 0.34));
+  const p1Op    = ease(c((rp - 0.25) / 0.35));
   const p1Y     = (1 - p1Op) * 10;
-  const p2Op    = ease(c((rp - 0.34) / 0.32));
+  const p2Op    = ease(c((rp - 0.40) / 0.35));
   const p2Y     = (1 - p2Op) * 10;
 
   // Right column (table)
-  const thOp   = ease(c((rp - 0.18) / 0.32));
+  const thOp   = ease(c((rp - 0.20) / 0.35));
   const thY    = (1 - thOp) * 10;
-  const rowOp  = (i: number) => ease(c((rp - (0.32 + i * 0.055)) / 0.28));
+  const rowOp  = (i: number) => ease(c((rp - (0.35 + i * 0.05)) / 0.30));
   const rowY   = (i: number) => (1 - rowOp(i)) * 8;
 
   return (
@@ -109,8 +130,8 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
         <div style={{ flex: isMobile ? "none" : "0 0 44%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <p
             style={{
-              fontFamily: "Space Mono, monospace", fontSize: "0.6875rem",
-              letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 20,
+              fontFamily: "var(--font-mono)", fontSize: "0.6875rem",
+              letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 15,
               opacity: labelOp, transform: `translateY(${labelY}px)`,
             }}
           >
@@ -119,7 +140,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
 
           <h2
             style={{
-              fontFamily: "Syne, sans-serif",
+              fontFamily: "var(--font-display)",
               fontSize: "clamp(2rem, 4.5vw, 3.5rem)", fontWeight: 700,
               lineHeight: 1.08, color: "#FFFFFF", marginBottom: 32,
               opacity: h2Op, transform: `translateY(${h2Y}px)`,
@@ -132,7 +153,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
 
           <p
             style={{
-              fontFamily: "Outfit, sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
               lineHeight: 1.75, color: "#FFFFFF", marginBottom: 14,
               opacity: p1Op, transform: `translateY(${p1Y}px)`,
@@ -146,7 +167,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
 
           <p
             style={{
-              fontFamily: "Outfit, sans-serif",
+              fontFamily: "var(--font-body)",
               fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
               lineHeight: 1.75, color: "#FFFFFF",
               opacity: p2Op, transform: `translateY(${p2Y}px)`,
@@ -180,7 +201,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
                     key={label}
                     style={{
                       textAlign: align,
-                      fontFamily: "Space Mono, monospace", fontSize: "0.5625rem",
+                      fontFamily: "var(--font-mono)", fontSize: "0.5625rem",
                       letterSpacing: "0.14em", textTransform: "uppercase",
                       color: accent ? "#38BDF8" : "#FFFFFF",
                       fontWeight: accent ? 700 : 400, paddingBottom: 14,
@@ -203,7 +224,7 @@ export default function WhySection({ canvasPaused, isActive = false }: WhySectio
                     opacity: rowOp(i), transform: `translateY(${rowY(i)}px)`,
                   }}
                 >
-                  <td style={{ padding: "11px 20px 11px 0", fontFamily: "Outfit, sans-serif", fontSize: "0.875rem", color: "#FFFFFF", whiteSpace: "nowrap" }}>
+                  <td style={{ padding: "11px 20px 11px 0", fontFamily: "var(--font-body)", fontSize: "0.875rem", color: "#FFFFFF", whiteSpace: "nowrap" }}>
                     {row.label}
                   </td>
                   <td style={{ textAlign: "center", padding: "11px 20px 11px 0" }}>

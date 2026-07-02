@@ -52,15 +52,18 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
   const c    = (v: number) => Math.max(0, Math.min(1, v));
   const ease = (x: number) => { const t = c(x); return t * t * (3 - 2 * t); };
 
-  const labelOp = ease(c(rp / 0.30));
+  // Reveal trigger points normalized: headline (h2Op) reaches full opacity
+  // at exactly 50% of this page's own reveal timer, matching Landing/Market
+  // Gap/Waitlist. Every value below is a clean multiple of 5%.
+  const labelOp = ease(c(rp / 0.35));
   const labelY  = (1 - labelOp) * 14;
-  const h2Op    = ease(c((rp - 0.10) / 0.30));
+  const h2Op    = ease(c((rp - 0.10) / 0.40));
   const h2Y     = (1 - h2Op) * 14;
-  const p1Op    = ease(c((rp - 0.22) / 0.28));
+  const p1Op    = ease(c((rp - 0.25) / 0.35));
   const p1Y     = (1 - p1Op) * 10;
-  const p2Op    = ease(c((rp - 0.33) / 0.26));
+  const p2Op    = ease(c((rp - 0.40) / 0.35));
   const p2Y     = (1 - p2Op) * 10;
-  const ppOp    = (i: number) => ease(c((rp - 0.44 - i * 0.07) / 0.24));
+  const ppOp    = (i: number) => ease(c((rp - 0.55 - i * 0.10) / 0.30));
   const ppY     = (i: number) => (1 - ppOp(i)) * 8;
 
   return (
@@ -109,12 +112,12 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
       >
         <p
           style={{
-            fontFamily: "Space Mono, monospace",
+            fontFamily: "var(--font-mono)",
             fontSize: "0.6875rem",
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             color: "#38BDF8",
-            marginBottom: 20,
+            marginBottom: 15,
             opacity: labelOp,
             transform: `translateY(${labelY}px)`,
           }}
@@ -124,7 +127,7 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
 
         <h2
           style={{
-            fontFamily: "Syne, sans-serif",
+            fontFamily: "var(--font-display)",
             fontSize: "clamp(2rem, 4.5vw, 3.5rem)",
             fontWeight: 700,
             lineHeight: 1.08,
@@ -141,8 +144,8 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
 
         <p
           style={{
-            fontFamily: "Outfit, sans-serif",
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.0625rem)",
+            fontFamily: "var(--font-body)",
+            fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
             lineHeight: 1.75,
             color: "#FFFFFF",
             marginBottom: 16,
@@ -158,8 +161,8 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
 
         <p
           style={{
-            fontFamily: "Outfit, sans-serif",
-            fontSize: "clamp(0.9375rem, 1.4vw, 1.0625rem)",
+            fontFamily: "var(--font-body)",
+            fontSize: "clamp(0.9375rem, 1.35vw, 1.0625rem)",
             lineHeight: 1.75,
             color: "#FFFFFF",
             marginBottom: 40,
@@ -186,7 +189,7 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                fontFamily: "Outfit, sans-serif",
+                fontFamily: "var(--font-body)",
                 fontSize: "0.9375rem",
                 color: "#FFFFFF",
                 lineHeight: 1.4,
@@ -196,7 +199,7 @@ export default function ProblemSection({ canvasPaused, isActive = false }: Probl
             >
               <span
                 style={{
-                  fontFamily: "Space Mono, monospace",
+                  fontFamily: "var(--font-mono)",
                   color: "#38BDF8",
                   fontSize: "0.75rem",
                   flexShrink: 0,
