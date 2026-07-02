@@ -1,7 +1,0 @@
-{
-  "tool_preferences": {
-    "update_database": "skip",
-    "get_population": "run",
-    "get_capital": "run"
-  }
-}
