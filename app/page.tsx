@@ -192,14 +192,12 @@ export default function Home() {
   const [lpPaused, setLpPaused] = useState(false);
   const [ppPaused, setPpPaused] = useState(true);
   const [mpPaused, setMpPaused] = useState(true);
-  const [fpPaused, setFpPaused] = useState(true);
   const [wpPaused, setWpPaused] = useState(true);
   useEffect(() => {
     return scrollYProgress.on("change", v => {
       setLpPaused(v > (PROBLEM_ARRIVED + 25) / T);      // 25vh into Problem's hold
       setPpPaused(v < (PROBLEM_START - 10) / T || v > (MARKETGAP_ARRIVED + 30) / T); // 10vh head-start; 30vh into Market Gap's hold
       setMpPaused(v < MG_IN[0] || v > (FEATURES_ARRIVED + 50) / T);                  // 50vh past Features fully arriving
-      setFpPaused(v < F_IN[0] || v > W_IN[0]);
       setWpPaused(v < (WAITLIST_START - 30) / T);        // 30vh head-start before Waitlist's entrance
     });
   }, [scrollYProgress]);
@@ -356,7 +354,7 @@ export default function Home() {
             originX: 0.5, originY: 0.5,
           }}
         >
-          <FeaturesSection tabScrollProgress={tabProgress} canvasPaused={fpPaused} isActive={featuresActive} />
+          <FeaturesSection tabScrollProgress={tabProgress} isActive={featuresActive} />
         </motion.div>
 
         {/* ── Waitlist — z 5 ─────────────────────────────────────────── */}

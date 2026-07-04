@@ -188,10 +188,14 @@ export default function WaitlistSection({ isActive = false, canvasPaused, forceR
                 <div
                   style={{
                     display: "flex",
-                    gap: 10,
+                    alignItems: "stretch",
                     width: "100%",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
+                    height: 50,
+                    border: "1px solid #38BDF8",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    boxShadow: focused ? "0 0 0 3px rgba(56, 189, 248, 0.25)" : "0 0 0 0 rgba(56, 189, 248, 0)",
+                    transition: "box-shadow 0.2s",
                   }}
                 >
                   <input
@@ -204,35 +208,45 @@ export default function WaitlistSection({ isActive = false, canvasPaused, forceR
                     placeholder="you@company.com"
                     aria-label="Work email"
                     style={{
-                      flex: "1 1 220px",
-                      minWidth: 200,
-                      maxWidth: 300,
-                      padding: "12px 18px",
+                      flex: "1 1 auto",
+                      minWidth: 0,
+                      height: "100%",
+                      boxSizing: "border-box",
+                      padding: "0 18px",
                       background: "#0F172A",
-                      border: `1px solid ${focused ? "#38BDF8" : "#1E293B"}`,
-                      borderRadius: 6,
+                      border: "none",
                       color: "#FFFFFF",
                       fontFamily: "var(--font-body)",
                       fontSize: "0.9375rem",
                       outline: "none",
-                      transition: "border-color 0.2s",
                     }}
                   />
+                  <div style={{ width: 1, alignSelf: "stretch", background: "rgba(56, 189, 248, 0.4)", flexShrink: 0 }} />
                   <button
                     type="submit"
                     style={{
                       flexShrink: 0,
-                      padding: "12px 26px",
+                      height: "100%",
+                      boxSizing: "border-box",
+                      padding: "0 26px",
                       background: "#38BDF8",
                       color: "#080C14",
                       border: "none",
-                      borderRadius: 6,
                       fontFamily: "var(--font-body)",
-                      fontSize: "0.9375rem",
-                      fontWeight: 600,
-                      letterSpacing: "0.02em",
+                      fontSize: "0.875rem",
+                      fontWeight: 500,
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
                       cursor: "pointer",
                       whiteSpace: "nowrap",
+                      filter: "brightness(1)",
+                      transition: "filter 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.filter = "brightness(1.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.filter = "brightness(1)";
                     }}
                   >
                     Request access

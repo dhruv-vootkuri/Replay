@@ -193,16 +193,29 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
               padding: "12px 24px",
               background: "#38BDF8",
               color: "#080C14",
-              borderRadius: 7,
+              border: "1px solid #38BDF8",
+              borderRadius: 2,
               fontFamily: "var(--font-body)",
-              fontSize: "0.9375rem",
-              fontWeight: 600,
-              letterSpacing: "0.01em",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              letterSpacing: "0.04em",
+              textTransform: "uppercase",
               textDecoration: "none",
               cursor: "pointer",
               marginBottom: 16,
               opacity: ctaOpacity,
               transform: `translateY(${ctaY}px)`,
+              transition: "color 0.2s, background 0.2s, border-color 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "transparent";
+              el.style.color = "#38BDF8";
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = "#38BDF8";
+              el.style.color = "#080C14";
             }}
           >
             Request early access

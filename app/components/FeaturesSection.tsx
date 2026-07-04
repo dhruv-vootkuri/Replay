@@ -2,14 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import Constellation from "@/app/components/constellation/Constellation";
-import type { StarPoint, Edge } from "@/app/components/constellation/types";
-import {
-  insightsPoints, insightsEdges,
-  pressurePoints, pressureEdges, pressureOverlayPoints, pressureOverlayEdges,
-  sandboxPoints, sandboxEdges,
-  agentPoints, agentEdges,
-} from "@/app/components/constellation/presets";
 
 const SLIVER = 52;
 const REVEAL_DURATION = 720;
@@ -18,11 +10,6 @@ type TabDef = {
   id: string;
   label: string;
   accent: string;
-  points: StarPoint[];
-  edges: Edge[];
-  variant: "flagged" | "overlay-diff" | "twin-ghost" | "traveling-point";
-  overlayPoints?: StarPoint[];
-  overlayEdges?: Edge[];
   heading: string;
   body: string;
 };
@@ -32,9 +19,6 @@ const TABS: TabDef[] = [
     id: "insights",
     label: "Insights",
     accent: "#5EA8F0",
-    points: insightsPoints,
-    edges: insightsEdges,
-    variant: "flagged",
     heading: "Surface what diverged.",
     body: "Alioth watches every trace. When a cluster of decisions falls outside the expected pattern, it highlights exactly which edges changed — not a log of everything that happened. You open a flag and see the specific decision node, not a wall of tokens.",
   },
@@ -42,11 +26,6 @@ const TABS: TabDef[] = [
     id: "pressure-tests",
     label: "Pressure Tests",
     accent: "#9B8CF5",
-    points: pressurePoints,
-    edges: pressureEdges,
-    variant: "overlay-diff",
-    overlayPoints: pressureOverlayPoints,
-    overlayEdges: pressureOverlayEdges,
     heading: "Re-run the exact moment.",
     body: "Pick a single trace, multiselect a batch, or target everything tagged 'checkout-flow' — swap one input, and re-run against the new system. The overlaid diff shows precisely where the agent's path diverged, plus the runtime and compute cost of getting there. No guessing which input caused it.",
   },
@@ -54,9 +33,6 @@ const TABS: TabDef[] = [
     id: "sandboxes",
     label: "Sandboxes",
     accent: "#3EC8D8",
-    points: sandboxPoints,
-    edges: sandboxEdges,
-    variant: "twin-ghost",
     heading: "Test without touching production.",
     body: "Snapshot your full agent environment — tools, memory, system prompt, storage — into an isolated clone with ergonomic DB compatibility. Anything flagged unsafe or compute-heavy gets swapped for a cached closest-match response automatically, so destructive calls never reach production. Takes about 30 seconds to spin up, and the clone is discarded once tests pass.",
   },
@@ -64,9 +40,6 @@ const TABS: TabDef[] = [
     id: "agent",
     label: "Agent",
     accent: "#6DCCB0",
-    points: agentPoints,
-    edges: agentEdges,
-    variant: "traveling-point",
     heading: "Infrastructure that audits itself.",
     body: "Alioth's agent plugs directly into your infrastructure — not a dashboard bolted on top — and re-runs pressure tests against your live graph on a continuous loop, without a human queuing them up. It catches the same drift Insights would flag, before your users do.",
   },
@@ -91,11 +64,10 @@ function sg(p: number, start: number, end: number): number {
 
 interface FeaturesSectionProps {
   tabScrollProgress?: number;
-  canvasPaused?: boolean;
   isActive?: boolean;
 }
 
-export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, isActive = false }: FeaturesSectionProps) {
+export default function FeaturesSection({ tabScrollProgress = 0, isActive = false }: FeaturesSectionProps) {
   const rm  = useReducedMotion() ?? false;
   const pct = tabScrollProgress;
 
@@ -192,9 +164,7 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
 
             {isMobile ? (
               <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "56px 24px 48px", gap: 20, overflowY: "auto" }}>
-                <div style={{ width: "min(56vw, 180px)", aspectRatio: "1", flexShrink: 0 }}>
-                  <Constellation mode="svg" points={tab.points} edges={tab.edges} state="resolved" variant={tab.variant} accentColor={tab.accent} overlayPoints={tab.overlayPoints} overlayEdges={tab.overlayEdges} paused={canvasPaused} />
-                </div>
+                <div style={{ width: "min(56vw, 180px)", aspectRatio: "1", flexShrink: 0, borderRadius: 8, background: tab.accent }} />
                 <div style={{ textAlign: "center", maxWidth: 340 }}>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "#38BDF8", marginBottom: 7, opacity: a1, transform: `translateY(${y1}px)` }}>How it works</p>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", letterSpacing: "0.18em", textTransform: "uppercase", color: tab.accent, marginBottom: 12, opacity: a2, transform: `translateY(${y2}px)` }}>{tab.label}</p>
@@ -205,9 +175,7 @@ export default function FeaturesSection({ tabScrollProgress = 0, canvasPaused, i
             ) : (
               <div style={{ position: "absolute", left: SLIVER, right: 0, top: 0, bottom: 0, display: "flex", alignItems: "center" }}>
                 <div style={{ flexShrink: 0, width: "44%", padding: "48px 40px", alignSelf: "stretch", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <div style={{ width: "100%", maxWidth: 360, aspectRatio: "1" }}>
-                    <Constellation mode="svg" points={tab.points} edges={tab.edges} state="resolved" variant={tab.variant} accentColor={tab.accent} overlayPoints={tab.overlayPoints} overlayEdges={tab.overlayEdges} paused={canvasPaused} />
-                  </div>
+                  <div style={{ width: "100%", maxWidth: 360, aspectRatio: "1", borderRadius: 8, background: tab.accent }} />
                 </div>
 
                 <div style={{ width: 1, height: "46%", background: "#1E293B", flexShrink: 0 }} />
