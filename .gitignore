@@ -14,3 +14,10 @@ __pycache__/
 build/
 dist/
 node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# tooling
+.jolli/

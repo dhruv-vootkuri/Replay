@@ -62,10 +62,14 @@
   --radius-full: 9999px;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Reset lives in @layer base so Tailwind utilities (later layer) still win.
+   If unlayered, padding/margin zeroing would override every spacing utility. */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 html {
@@ -84,3 +88,36 @@ body {
   background-color: #080C14;
   color: #94A3B8;
 }
+
+/* ─── Dashboard utilities ──────────────────────────────────────────── */
+.dash-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #1E293B transparent;
+}
+.dash-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.dash-scroll::-webkit-scrollbar-thumb {
+  background: #1E293B;
+  border-radius: 9999px;
+}
+.dash-scroll::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* Faint constellation grid backdrop for the dashboard canvas */
+.dash-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.06) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+@keyframes dash-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.dash-live-dot { animation: dash-pulse 2s ease-in-out infinite; }
+
+@keyframes dash-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dash-fade-in { animation: dash-fade-in 0.4s ease-out both; }
+
+.tabular-nums { font-variant-numeric: tabular-nums; }

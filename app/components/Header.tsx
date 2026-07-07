@@ -132,6 +132,26 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
               ))}
             </nav>
 
+            <a
+              href="/dashboard"
+              style={{
+                flexShrink: 0,
+                marginRight: 24,
+                textDecoration: "none",
+                fontFamily: "var(--font-body)",
+                fontSize: "1rem",
+                fontWeight: 400,
+                color: "#FFFFFF",
+                letterSpacing: "0.012em",
+                whiteSpace: "nowrap",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#38BDF8"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
+            >
+              Console
+            </a>
+
             <button
               onClick={() => onNavigate?.("waitlist")}
               style={{
