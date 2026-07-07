@@ -36,9 +36,9 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
   }, []);
 
   const NAV_LINKS: { label: string; target: NavTarget }[] = [
-    { label: "Problem",      target: "problem"  },
-    { label: "Market gap",   target: "why"      },
-    { label: "How it works", target: "features" },
+    { label: "What",      target: "problem"  },
+    { label: "Why",   target: "why"      },
+    { label: "How", target: "features" },
   ];
 
   return (
@@ -79,13 +79,8 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
             onNavigate?.("landing");
           }}
         >
-          <svg width="20" height="20" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-            <circle cx="4" cy="9" r="2" fill="#38BDF8" opacity="0.85" />
-            <circle cx="14" cy="5" r="1.5" fill="#38BDF8" opacity="0.55" />
-            <circle cx="14" cy="13" r="1.5" fill="#38BDF8" opacity="0.55" />
-            <line x1="5.7" y1="8.1" x2="12.6" y2="5.7" stroke="#38BDF8" strokeWidth="0.75" strokeOpacity="0.45" />
-            <line x1="5.7" y1="9.9" x2="12.6" y2="12.3" stroke="#38BDF8" strokeWidth="0.75" strokeOpacity="0.45" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/alioth-logo.svg" alt="" width={28} height={28} aria-hidden="true" style={{ display: "block" }} />
           <span
             style={{
               fontFamily: "var(--font-display)",
@@ -165,7 +160,7 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
                 el.style.borderColor = "#38BDF8";
               }}
             >
-              Request access
+              Join Waitlist
             </button>
           </>
         )}

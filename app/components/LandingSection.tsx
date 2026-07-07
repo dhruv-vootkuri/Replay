@@ -74,6 +74,8 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
   const guideOpacity    = clamp((rp - 0.55) / 0.25);
   const guideY          = (1 - guideOpacity) * 8;
   const audOpacity      = clamp((rp - 0.65) / 0.25);
+  const transitionOpacity = clamp((rp - 0.15) / 0.35);
+  const transitionY       = (1 - transitionOpacity) * 8;
   const scrollOpacity   = rp >= 1 ? 0.4 : 0;
 
   return (
@@ -125,15 +127,15 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
       >
         <div
           style={{
-            maxWidth: isMobile ? "100%" : 540,
-            width: isMobile ? "100%" : "46%",
+            maxWidth: isMobile ? "100%" : 820,
+            width: isMobile ? "100%" : "60%",
             display: "flex",
             flexDirection: "column",
             alignItems: "flex-start",
           }}
         >
           {/* "let us guide you" */}
-          <div
+          {/* <div
             style={{
               fontFamily: "var(--font-mono)",
               fontSize: "0.6875rem",
@@ -147,12 +149,12 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
             }}
           >
             let us guide you
-          </div>
+          </div> */}
 
           <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "clamp(2.25rem, 6vw, 4.5rem)",
+              fontSize: isMobile ? "clamp(1.65rem, 8vw, 2.25rem)" : "clamp(2.25rem, 5vw, 4.5rem)",
               fontWeight: 700,
               lineHeight: 1.08,
               color: "#FFFFFF",
@@ -162,12 +164,26 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
               willChange: "filter, opacity",
             }}
           >
-            Your agents are live.
+            Visible Agents,
             <br />
-            Their reasoning
-            <br />
-            is invisible.
+            Invisible Reasoning
           </h1>
+
+          <p
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(1.125rem, 2.4vw, 1.5rem)",
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: "#FFFFFF",
+              maxWidth: 460,
+              marginBottom: 20,
+              opacity: transitionOpacity,
+              transform: `translateY(${transitionY}px)`,
+            }}
+          >
+            But it doesn&apos;t have to be this way.
+          </p>
 
           <p
             style={{
@@ -180,8 +196,7 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
               opacity: subheadOpacity,
             }}
           >
-            Alioth makes every agent decision legible, and tells you whether it
-            would make the same one again.
+            Alioth makes agent decisions legible, so production mistakes never reappear.
           </p>
 
           <a
@@ -218,19 +233,20 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
               el.style.color = "#080C14";
             }}
           >
-            Request early access
+            Request Early Access
             <span aria-hidden="true" style={{ fontSize: "1.1em", lineHeight: 1 }}>→</span>
           </a>
 
           <p
             style={{
               fontFamily: "var(--font-body)",
-              fontSize: "0.8125rem",
+              fontSize: "1rem",
               color: "#FFFFFF",
               opacity: audOpacity,
             }}
           >
-            For engineering teams building agentic workflows.
+            For technical and non-technical teams alike, one agent or a hundred.
+
           </p>
         </div>
       </div>
@@ -250,13 +266,13 @@ export default function LandingSection({ canvasPaused, forceResolved }: LandingS
           opacity: 0,
         }}
       >
-        <p style={{
+        {/* <p style={{
           fontFamily: "var(--font-mono)",
           fontSize: "0.625rem",
           letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: "#38BDF8",
-        }}>scroll</p>
+        }}>scroll</p> */}
         <svg width="1" height="24" viewBox="0 0 1 24" fill="none">
           <line x1="0.5" y1="0" x2="0.5" y2="24" stroke="#38BDF8" strokeOpacity="0.35" />
         </svg>
