@@ -64,7 +64,7 @@ export default function Sidebar() {
         </span>
         <div className="leading-tight">
           <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-starlight">
-            Alioth
+            Floe
           </div>
           <div className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-dim-starlight/60">
             replay console

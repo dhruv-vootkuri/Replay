@@ -1,30 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion, useMotionValue, useTransform, useMotionTemplate, type MotionValue } from "framer-motion";
 
-export type NavTarget = "landing" | "problem" | "why" | "features" | "waitlist";
+const NAV_LINKS: { label: string; href: string }[] = [
+  { label: "Traces", href: "/traces" },
+  { label: "Replays", href: "/replays" },
+];
 
-interface HeaderProps {
-  onNavigate?: (target: NavTarget) => void;
-  // 0 = fully transparent (Landing, first paint), 1 = fully opaque.
-  // A MotionValue (not plain state) so background/blur update on every
-  // scroll frame without a React re-render — state-driven updates read as
-  // stepped/laggy next to the rest of the page's motion-value-driven scroll.
-  opacity?: MotionValue<number>;
-}
-
-export default function Header({ onNavigate, opacity }: HeaderProps) {
-  const fallbackOpacity = useMotionValue(0);
-  const op = opacity ?? fallbackOpacity;
-
-  const bgAlpha     = useTransform(op, [0, 1], [0, 0.92]);
-  const blurPx      = useTransform(op, [0, 1], [0, 16]);
-  const borderAlpha = useTransform(op, [0, 1], [0, 0.06]);
-  const background     = useMotionTemplate`rgba(8, 12, 20, ${bgAlpha})`;
-  const backdropFilter = useMotionTemplate`blur(${blurPx}px)`;
-  const borderBottom   = useMotionTemplate`1px solid rgba(255,255,255,${borderAlpha})`;
-
+export default function Header() {
+  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -35,180 +21,156 @@ export default function Header({ onNavigate, opacity }: HeaderProps) {
     return () => mq.removeEventListener("change", h);
   }, []);
 
-  const NAV_LINKS: { label: string; target: NavTarget }[] = [
-    { label: "What",      target: "problem"  },
-    { label: "Why",   target: "why"      },
-    { label: "How", target: "features" },
-  ];
-
   return (
-    <motion.header
+    <header
       style={{
         position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
+        top: isMobile ? 12 : 20,
+        left: isMobile ? 12 : 20,
+        right: isMobile ? 12 : 20,
         zIndex: 200,
-        pointerEvents: "auto",
-        background,
-        backdropFilter,
-        WebkitBackdropFilter: backdropFilter,
-        borderBottom,
       }}
     >
       <div
+        className="frost-panel"
         style={{
           display: "flex",
           alignItems: "center",
-          padding: "18px 48px",
-          gap: 0,
+          maxWidth: 1100,
+          margin: "0 auto",
+          padding: isMobile ? "10px 16px" : "10px 14px 10px 18px",
+          borderRadius: 999,
         }}
       >
         {/* Wordmark */}
-        <a
-          href="#landing"
+        <Link
+          href="/"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 9,
+            gap: 8,
             textDecoration: "none",
             flexShrink: 0,
           }}
-          onClick={(e) => {
-            e.preventDefault();
-            onNavigate?.("landing");
-          }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/alioth-logo.svg" alt="" width={28} height={28} aria-hidden="true" style={{ display: "block" }} />
+          <img className="frost-halo" src="/alioth-logo.svg" alt="" width={24} height={24} aria-hidden="true" style={{ display: "block" }} />
           <span
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "1.25rem",
+              fontSize: "1.0625rem",
               fontWeight: 700,
-              color: "#FFFFFF",
+              color: "var(--ink)",
               letterSpacing: "-0.01em",
             }}
           >
-            Alioth
+            Floe
           </span>
-        </a>
+        </Link>
 
-        {/* Desktop nav */}
         {!isMobile && (
           <>
-            <nav
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flex: 1,
-                gap: 44,
-                marginLeft: 56,
-              }}
-            >
-              {NAV_LINKS.map((link) => (
-                <button
-                  key={link.target}
-                  onClick={() => onNavigate?.(link.target)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    fontFamily: "var(--font-body)",
-                    fontSize: "1rem",
-                    fontWeight: 400,
-                    color: "#FFFFFF",
-                    borderRadius: 0,
-                    transition: "color 0.2s",
-                    letterSpacing: "0.012em",
-                    whiteSpace: "nowrap",
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#38BDF8"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
-                >
-                  {link.label}
-                </button>
-              ))}
+            <nav style={{ display: "flex", alignItems: "center", flex: 1, gap: 32, marginLeft: 40 }}>
+              {NAV_LINKS.map((link) => {
+                const active = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: "0.75rem",
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      color: active ? "var(--frost-700)" : "var(--ink)",
+                      textDecoration: "none",
+                      opacity: active ? 1 : 0.6,
+                      borderBottom: active ? "1px solid var(--frost-500)" : "1px solid transparent",
+                      paddingBottom: 2,
+                      transition: "opacity 0.2s, color 0.2s",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.opacity = "1";
+                      if (!active) el.style.color = "var(--frost-700)";
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLElement;
+                      el.style.opacity = active ? "1" : "0.6";
+                      if (!active) el.style.color = "var(--ink)";
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
 
             <a
               href="/dashboard"
               style={{
                 flexShrink: 0,
-                marginRight: 24,
+                marginRight: 20,
                 textDecoration: "none",
-                fontFamily: "var(--font-body)",
-                fontSize: "1rem",
-                fontWeight: 400,
-                color: "#FFFFFF",
-                letterSpacing: "0.012em",
-                whiteSpace: "nowrap",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#38BDF8"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#FFFFFF"; }}
-            >
-              Console
-            </a>
-
-            <button
-              onClick={() => onNavigate?.("waitlist")}
-              style={{
-                flexShrink: 0,
-                padding: "6px 16px",
-                background: "transparent",
-                color: "#38BDF8",
-                border: "1px solid #38BDF8",
-                borderRadius: 2,
-                fontFamily: "var(--font-body)",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                cursor: "pointer",
-                letterSpacing: "0.04em",
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.75rem",
+                letterSpacing: "0.1em",
                 textTransform: "uppercase",
-                transition: "color 0.2s, border-color 0.2s",
+                color: "var(--ink)",
+                opacity: 0.6,
+                whiteSpace: "nowrap",
+                transition: "opacity 0.2s, color 0.2s",
               }}
               onMouseEnter={(e) => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = "#FFFFFF";
-                el.style.borderColor = "#FFFFFF";
+                el.style.opacity = "1";
+                el.style.color = "var(--frost-700)";
               }}
               onMouseLeave={(e) => {
                 const el = e.currentTarget as HTMLElement;
-                el.style.color = "#38BDF8";
-                el.style.borderColor = "#38BDF8";
+                el.style.opacity = "0.6";
+                el.style.color = "var(--ink)";
               }}
             >
-              Join Waitlist
-            </button>
+              Console
+            </a>
           </>
         )}
 
-        {/* Mobile: CTA only */}
-        {isMobile && (
-          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-            <button
-              onClick={() => onNavigate?.("waitlist")}
-              style={{
-                padding: "6px 14px",
-                background: "transparent",
-                color: "#38BDF8",
-                border: "1px solid #38BDF8",
-                borderRadius: 2,
-                fontFamily: "var(--font-body)",
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                cursor: "pointer",
-                letterSpacing: "0.04em",
-                textTransform: "uppercase",
-              }}
-            >
-              Request access
-            </button>
-          </div>
-        )}
+        <Link
+          href="/waitlist"
+          className="frost-halo"
+          style={{
+            flexShrink: 0,
+            marginLeft: isMobile ? "auto" : 0,
+            padding: isMobile ? "8px 16px" : "8px 18px",
+            background: "var(--ink)",
+            color: "var(--arctic-bg)",
+            borderRadius: 999,
+            fontFamily: "var(--font-body)",
+            fontSize: "0.8125rem",
+            fontWeight: 500,
+            textDecoration: "none",
+            letterSpacing: "0.01em",
+            whiteSpace: "nowrap",
+            boxShadow: "0 0 0 0 rgba(95,168,211,0)",
+            transition: "box-shadow 0.25s, opacity 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.opacity = "0.9";
+            el.style.boxShadow = "var(--glow-frost)";
+          }}
+          onMouseLeave={(e) => {
+            const el = e.currentTarget as HTMLElement;
+            el.style.opacity = "1";
+            el.style.boxShadow = "0 0 0 0 rgba(95,168,211,0)";
+          }}
+        >
+          Join Waitlist
+        </Link>
       </div>
-    </motion.header>
+    </header>
   );
 }

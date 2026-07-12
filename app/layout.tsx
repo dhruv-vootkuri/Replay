@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Alioth — Trust through interpretability",
+  title: "Floe — Fork one input. See exactly what reruns.",
   description:
-    "Alioth makes agent behavior legible. See why your agents did what they did.",
+    "Floe traces every LLM call, tool call, and span your agent makes. Fork any point mid-trace and get a span-by-span diff of what changed.",
 };
 
 export default function RootLayout({
