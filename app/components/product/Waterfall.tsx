@@ -3,7 +3,9 @@
 // badges/colors as lib/replay/format.ts KIND_META, same forkable ◆ marker.
 // The console's real colors are intentionally kept here (this is a window
 // into the real product, not marketing chrome) against the page's arctic
-// monochrome frame — same pattern as the dashboard-preview.png screenshot.
+// monochrome frame.
+
+import WindowChrome from "./WindowChrome";
 
 type Kind = "agent" | "task" | "llm" | "tool";
 
@@ -38,29 +40,31 @@ interface WaterfallProps {
 export default function Waterfall({ compact = false }: WaterfallProps) {
   return (
     <div
+      className="arctic-code-block"
       style={{
         background: "#0A0A0A",
-        border: "1px solid rgba(150,190,220,0.22)", boxShadow: "0 20px 50px -20px rgba(60,90,120,0.35), 0 0 0 1px rgba(190,220,239,0.06)",
-        padding: compact ? "18px 20px" : "28px 32px",
+        boxShadow: "0 10px 24px -8px rgba(15,23,32,0.55), 0 2px 6px -2px rgba(15,23,32,0.4)",
         fontFamily: "var(--font-mono)",
       }}
     >
+      <WindowChrome title="waterfall — traces/ResearchAgent" />
+      <div style={{ padding: compact ? "18px 20px" : "28px 32px" }}>
       {!compact && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-          <span style={{ fontSize: "0.6875rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666666" }}>
+          <span style={{ fontSize: "0.6875rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#808080" }}>
             traces / ResearchAgent
           </span>
-          <span style={{ fontSize: "0.6875rem", letterSpacing: "0.08em", color: "#666666" }}>
+          <span style={{ fontSize: "0.6875rem", letterSpacing: "0.08em", color: "#808080" }}>
             ◆ = forkable
           </span>
         </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: compact ? 6 : 8 }}>
+      <div className="dash-scroll" style={{ display: "flex", flexDirection: "column", gap: compact ? 6 : 8, overflowX: "auto" }}>
         {ROWS.map((row, i) => {
           const meta = KIND_META[row.kind];
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: row.depth * 18 }}>
-              <span style={{ width: 12, flexShrink: 0, color: "#3A3A3A", fontSize: "0.75rem" }}>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: row.depth * 18, minWidth: "max-content" }}>
+              <span style={{ width: 12, flexShrink: 0, color: row.forkable ? KIND_META.tool.color : "#3A3A3A", fontSize: "0.75rem" }}>
                 {row.forkable ? "◆" : "·"}
               </span>
               <span
@@ -93,6 +97,7 @@ export default function Waterfall({ compact = false }: WaterfallProps) {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

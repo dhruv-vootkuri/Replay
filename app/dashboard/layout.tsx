@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-deep-space text-dim-starlight">
+    <div className="flex h-screen flex-col overflow-hidden bg-deep-space text-dim-starlight md:flex-row">
       <Sidebar />
       <main className="dash-scroll dash-grid flex-1 overflow-y-auto">{children}</main>
     </div>

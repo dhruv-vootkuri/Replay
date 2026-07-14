@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 interface NavItem {
   href: string;
@@ -45,15 +46,109 @@ const NAV: NavItem[] = [
   },
 ];
 
+function Brand() {
+  return (
+    <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5">
+      <span className="relative flex h-8 w-8 items-center justify-center">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+          <circle cx="6" cy="9" r="1.6" fill="#38BDF8" />
+          <circle cx="15" cy="5" r="1.6" fill="#38BDF8" />
+          <circle cx="23" cy="11" r="1.6" fill="#38BDF8" />
+          <circle cx="12" cy="16" r="1.6" fill="#38BDF8" />
+          <circle cx="20" cy="22" r="1.6" fill="#38BDF8" />
+          <path d="M6 9l9-4 8 6-11 5 8 6" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" fill="none" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <div className="leading-tight">
+        <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-starlight">
+          Floe
+        </div>
+        <div className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-dim-starlight/60">
+          replay console
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
+    <nav className="mt-2 flex flex-1 flex-col gap-1 px-3">
+      {NAV.map((item) => {
+        const active = item.match(pathname);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              active
+                ? "bg-signal/10 text-starlight"
+                : "text-dim-starlight hover:bg-white/[0.04] hover:text-starlight"
+            }`}
+          >
+            {active && (
+              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-signal" />
+            )}
+            <span className={active ? "text-signal" : "text-dim-starlight/70 group-hover:text-dim-starlight"}>
+              {item.icon}
+            </span>
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function StatusFooter() {
+  return (
+    <div className="border-t border-white/[0.06] px-5 py-4">
+      <div className="flex items-center gap-2 text-xs text-dim-starlight">
+        <span className="dash-live-dot h-2 w-2 rounded-full bg-pulse" />
+        Tracer connected
+      </div>
+      <div className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-dim-starlight/50">
+        traces/ · local sink
+      </div>
+      <Link
+        href="/"
+        className="mt-3 inline-flex items-center gap-1 text-[11px] text-dim-starlight/60 transition-colors hover:text-signal"
+      >
+        ← Back to site
+      </Link>
+    </div>
+  );
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Close the drawer whenever the route changes (link click already closes
+  // it via onNavigate, but this also covers back/forward navigation).
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
   return (
-    <aside className="flex w-[236px] flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#0B1120]">
-      {/* Brand */}
-      <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5">
-        <span className="relative flex h-8 w-8 items-center justify-center">
-          <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+    <>
+      {/* Mobile top bar — replaces the fixed 236px sidebar below md, which
+          otherwise ate ~60% of a phone viewport and clipped every page's
+          content off-screen. */}
+      <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0B1120] px-4 py-3 md:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <svg width="24" height="24" viewBox="0 0 30 30" fill="none">
             <circle cx="6" cy="9" r="1.6" fill="#38BDF8" />
             <circle cx="15" cy="5" r="1.6" fill="#38BDF8" />
             <circle cx="23" cy="11" r="1.6" fill="#38BDF8" />
@@ -61,59 +156,53 @@ export default function Sidebar() {
             <circle cx="20" cy="22" r="1.6" fill="#38BDF8" />
             <path d="M6 9l9-4 8 6-11 5 8 6" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" fill="none" strokeLinejoin="round" />
           </svg>
-        </span>
-        <div className="leading-tight">
-          <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-starlight">
+          <span className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-starlight">
             Floe
-          </div>
-          <div className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-dim-starlight/60">
-            replay console
-          </div>
-        </div>
-      </Link>
-
-      {/* Nav */}
-      <nav className="mt-2 flex flex-1 flex-col gap-1 px-3">
-        {NAV.map((item) => {
-          const active = item.match(pathname);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                active
-                  ? "bg-signal/10 text-starlight"
-                  : "text-dim-starlight hover:bg-white/[0.04] hover:text-starlight"
-              }`}
-            >
-              {active && (
-                <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-signal" />
-              )}
-              <span className={active ? "text-signal" : "text-dim-starlight/70 group-hover:text-dim-starlight"}>
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Status footer */}
-      <div className="border-t border-white/[0.06] px-5 py-4">
-        <div className="flex items-center gap-2 text-xs text-dim-starlight">
-          <span className="dash-live-dot h-2 w-2 rounded-full bg-pulse" />
-          Tracer connected
-        </div>
-        <div className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-dim-starlight/50">
-          traces/ · local sink
-        </div>
-        <Link
-          href="/"
-          className="mt-3 inline-flex items-center gap-1 text-[11px] text-dim-starlight/60 transition-colors hover:text-signal"
-        >
-          ← Back to site
+          </span>
         </Link>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open navigation"
+          aria-expanded={open}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-white/[0.06] hover:text-starlight"
+        >
+          <Icon d="M4 6h16M4 12h16M4 18h16" />
+        </button>
       </div>
-    </aside>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden w-[236px] flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#0B1120] md:flex">
+        <Brand />
+        <NavList pathname={pathname} />
+        <StatusFooter />
+      </aside>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-[260px] max-w-[80vw] flex-col bg-[#0B1120]">
+            <div className="flex items-center justify-between">
+              <Brand />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close navigation"
+                className="mr-4 flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-white/[0.06] hover:text-starlight"
+              >
+                <Icon d="M6 6l12 12M18 6L6 18" />
+              </button>
+            </div>
+            <NavList pathname={pathname} onNavigate={() => setOpen(false)} />
+            <StatusFooter />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

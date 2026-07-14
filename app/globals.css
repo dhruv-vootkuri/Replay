@@ -81,9 +81,9 @@
    values via Tailwind classes — see CLAUDE.md "Color Palette" section for
    why those two systems are intentionally not unified. */
 :root {
-  /* Icy background, cools slightly toward the edges via body gradient below */
-  --arctic-bg:      #F7FAFC;
-  --arctic-bg-2:    #EEF3F7;
+  /* Flat white background — no blue cast, no gradient */
+  --arctic-bg:      #FFFFFF;
+  --arctic-bg-2:    #FFFFFF;
   --arctic-surface: #EEF2F6; /* card/input fills */
 
   /* Charcoal-navy ink, not warm/neutral black */
@@ -118,33 +118,22 @@ html {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Soft snap for section landings; no snap inside Features tabs */
-  scroll-snap-type: y proximity;
+  /* Traces/Replays are now in-page anchors on Landing, not separate routes */
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
   color: var(--slate);
   background-color: var(--arctic-bg);
-  /* Atmospheric wash (subtle radial cooling toward the edges) + faint
-     grain, blended so the page reads as air/light rather than flat
-     digital white. Grain is an inline SVG feTurbulence noise, low alpha. */
+  /* Faint neutral grain over flat white — inline SVG feTurbulence noise,
+     low alpha, no color tint. No gradient, no drift — flat white per
+     explicit design call (was a cooling blue radial wash before). */
   background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.53  0 0 0 0 0.64  0 0 0 0 0.74  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>"),
-    radial-gradient(ellipse 120% 70% at 50% -10%, #FCFEFF 0%, var(--arctic-bg) 45%, var(--arctic-bg-2) 100%);
-  background-attachment: fixed, fixed;
-  background-blend-mode: overlay, normal;
-  background-position: 0 0, 50% -10%;
-}
-
-/* Ultra-slow ambient drift — light shifting through ice, not a moving
-   blob. 38s cycle is well below the threshold anyone consciously tracks;
-   fully off under reduced-motion since it's decorative, not functional. */
-@media (prefers-reduced-motion: no-preference) {
-  body { animation: arctic-drift 38s ease-in-out infinite alternate; }
-}
-@keyframes arctic-drift {
-  from { background-position: 0 0, 50% -10%; }
-  to   { background-position: 0 0, 53% -4%; }
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.6  0 0 0 0 0.6  0 0 0 0 0.6  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-blend-mode: overlay;
 }
 
 /* NOTE: Tailwind v4 (Turbopack build observed) hoists rules out of a
@@ -160,7 +149,7 @@ body {
      border sides) so it reads as an ice-edge catching light, not a flat
      rectangle with a uniform border. */
   .frost-panel {
-    background: rgba(247, 250, 253, 0.72);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(24px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     border-top: 1px solid rgba(255, 255, 255, 0.65);
@@ -168,6 +157,36 @@ body {
     border-right: 1px solid rgba(150, 190, 220, 0.28);
     border-bottom: 1px solid rgba(150, 190, 220, 0.28);
     box-shadow: var(--shadow-depth), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Fully opaque counterpart to .frost-panel — the fixed header needs to
+     stay legible over any section (hero topo texture, product-UI screens,
+     video atmosphere) it happens to float over, so it skips the
+     translucency/blur but keeps the same ice-edge bevel + a tighter shadow.
+     Deliberately NOT var(--shadow-depth) — that far-shadow layer's blur
+     radius exceeds its own offset, so it bleeds ~15-20px above the pill's
+     own top edge into a visible gray band across the full viewport width
+     wherever the header floats over something with contrast (most visible
+     over the AtmosphericVideo sections). This shadow is contained instead. */
+  .header-panel {
+    background: var(--arctic-bg);
+    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    border-left: 1px solid rgba(232, 245, 251, 0.8);
+    border-right: 1px solid rgba(150, 190, 220, 0.35);
+    border-bottom: 1px solid rgba(150, 190, 220, 0.35);
+    box-shadow: 0 1px 3px -1px rgba(60, 90, 120, 0.10), 0 6px 14px -8px rgba(60, 90, 120, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Sitewide keyboard-focus ring — frost-700 (not frost-500) because it's
+     the only frost step that clears 3:1 non-text contrast against both the
+     light arctic-bg (5.29:1) and the dashboard's near-black surfaces
+     (3.40:1); frost-500 reads great on dark but fails on light (2.50:1).
+     Previously there was no :focus-visible rule at all sitewide — every
+     interactive element fell back to the plain browser-default outline. */
+  *:focus-visible {
+    outline: 2px solid var(--frost-700);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
   /* Opt-in hover intensification for .frost-panel elements that should
@@ -197,6 +216,77 @@ body {
   /* Soft frost halo — wordmark, primary CTAs. Light from within, not a UI glow. */
   .frost-halo {
     filter: drop-shadow(0 0 22px rgba(95, 168, 211, 0.22));
+  }
+
+  /* Tactile press feedback for primary CTAs — hover glow already exists via
+     inline JS (boxShadow), this adds the one missing interaction state
+     (active/press). transform isn't touched by any inline style on these
+     buttons, so a plain class-based rule applies cleanly. */
+  .press-scale {
+    transition: transform 0.15s ease;
+  }
+  .press-scale:active {
+    transform: scale(0.97);
+  }
+
+  /* Arctic hue glow for the real-UI code/trace blocks (Waterfall,
+     ReplayDiff, LogStream) — a genuine ambient light-bleed in the site's
+     frost-blue hue (same rgba(95,168,211,*) as --glow-frost/.frost-halo,
+     for hue consistency with every other hover/glow moment on the site),
+     plus the thin 3-stop icy gradient border ring (same gradient as
+     AtmosphericVideo's reduced-motion fallback) for a crisp edge on top of
+     the soft glow.
+
+     Gotcha: these three components set their default box-shadow via an
+     INLINE style prop (style={{ boxShadow: "..." }}) for the resting
+     state. Inline styles always beat every stylesheet rule regardless of
+     specificity or layering — more absolute than the .frost-panel/
+     Tailwind-hover gotcha above — so a `.arctic-code-block:hover {
+     box-shadow: ... }` rule on the block itself can never fire; it was
+     silently dead code. The glow is instead painted on a dedicated
+     ::after (no mask, so its box-shadow renders cleanly), which has no
+     inline style to compete with. Plain :hover rules throughout (not
+     Tailwind hover: utilities) per the .frost-panel layering gotcha. */
+  .arctic-code-block {
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .arctic-code-block:hover {
+    transform: scale(1.015);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arctic-code-block {
+      transition: none;
+    }
+    .arctic-code-block:hover {
+      transform: none;
+    }
+  }
+  .arctic-code-block::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    background: linear-gradient(120deg, #EAF3FA 0%, #C9E2F1 50%, #EEF3F7 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .arctic-code-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: 0 0 24px 2px rgba(95, 168, 211, 0.45), 0 0 48px 8px rgba(95, 168, 211, 0.2);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .arctic-code-block:hover::before,
+  .arctic-code-block:hover::after {
+    opacity: 1;
   }
 
 /* ─── Dashboard utilities ──────────────────────────────────────────── */

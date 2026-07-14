@@ -1,8 +1,13 @@
+const FOOTER_LINKS = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Contact", href: "/#waitlist" },
+];
+
 export default function Footer() {
   return (
     <footer
       style={{
-        borderTop: "1px solid var(--hairline)",
         padding: "28px 24px",
         display: "flex",
         flexDirection: "column",
@@ -10,12 +15,17 @@ export default function Footer() {
         gap: 14,
       }}
     >
+      {/* rgba(--ink), not var(--hairline) — this sits over the atmospheric
+          video, and hairline's pale blue-gray has ~zero contrast against
+          the video texture (same reason this footer's text uses --ink
+          instead of --slate — see globals.css / CLAUDE.md) */}
+      <div style={{ width: "60%", height: 1, background: "rgba(11,14,20,0.25)", marginBottom: 8 }} />
       <nav style={{ display: "flex", gap: 40 }}>
-        {["Privacy", "Terms", "Contact"].map((label) => (
+        {FOOTER_LINKS.map(({ label, href }) => (
           <a
             key={label}
-            href="#"
-            className="text-[var(--slate-dim)] transition-colors hover:text-[var(--frost-700)]"
+            href={href}
+            className="text-[var(--ink)] transition-colors hover:text-[var(--frost-700)]"
             style={{
               fontFamily: "var(--font-body)",
               fontSize: "0.8125rem",
@@ -26,7 +36,7 @@ export default function Footer() {
           </a>
         ))}
       </nav>
-      <p style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--slate-dim)", opacity: 0.75 }}>© 2026 Floe</p>
+      <p style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--ink)" }}>© 2026 Floe</p>
     </footer>
   );
 }

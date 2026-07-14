@@ -21,3 +21,12 @@ out/
 
 # tooling
 .jolli/
+
+# raw video source (archival only — see CLAUDE.md Atmospheric video section)
+*.mov
+
+# build artifacts
+tsconfig.tsbuildinfo
+
+# personal Claude Code permissions (machine-specific)
+.claude/settings.local.json

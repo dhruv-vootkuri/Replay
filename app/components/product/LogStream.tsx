@@ -2,6 +2,8 @@
 // app/dashboard/logs — same level colors as lib/replay/format.ts
 // LOG_LEVEL_META, real sample lines from the screenshotted session.
 
+import WindowChrome from "./WindowChrome";
+
 type Level = "debug" | "info" | "ok" | "warn" | "error";
 
 const LEVEL_META: Record<Level, { label: string; color: string }> = {
@@ -26,7 +28,9 @@ const ROWS: LogRow[] = [
 
 export default function LogStream() {
   return (
-    <div style={{ background: "#0A0A0A", border: "1px solid rgba(150,190,220,0.22)", boxShadow: "0 20px 50px -20px rgba(60,90,120,0.35), 0 0 0 1px rgba(190,220,239,0.06)", padding: "20px 24px", fontFamily: "var(--font-mono)" }}>
+    <div className="arctic-code-block" style={{ background: "#0A0A0A", boxShadow: "0 10px 24px -8px rgba(15,23,32,0.55), 0 2px 6px -2px rgba(15,23,32,0.4)", fontFamily: "var(--font-mono)" }}>
+      <WindowChrome title="logs — live" />
+      <div style={{ padding: "20px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
         <span className="dash-live-dot" style={{ width: 6, height: 6, borderRadius: "50%", background: "#34D399" }} />
         <span style={{ fontSize: "0.625rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "#666666" }}>streaming</span>
@@ -36,13 +40,14 @@ export default function LogStream() {
           const lm = LEVEL_META[row.level];
           return (
             <div key={i} style={{ display: "flex", gap: 12, fontSize: "0.75rem", flexWrap: "wrap" }}>
-              <span style={{ color: "#4A4A4A", flexShrink: 0 }}>{row.ts}</span>
+              <span style={{ color: "#828282", flexShrink: 0 }}>{row.ts}</span>
               <span style={{ color: lm.color, fontWeight: 700, width: 42, flexShrink: 0 }}>{lm.label}</span>
-              <span style={{ color: "#6B7280", width: 52, flexShrink: 0 }}>{row.source}</span>
+              <span style={{ color: "#8B95A3", width: 52, flexShrink: 0 }}>{row.source}</span>
               <span style={{ color: "#D4D4D4" }}>{row.message}</span>
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

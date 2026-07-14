@@ -3,10 +3,12 @@
 // lib/replay/sample-real.json: forked at 'get_capital' with
 // country Zorblax → Paris, 6 downstream spans affected.
 
+import WindowChrome from "./WindowChrome";
+
 type SpanStatus = "cached" | "forked" | "downstream";
 
 const STATUS_META: Record<SpanStatus, { label: string; color: string }> = {
-  cached: { label: "CACHED", color: "#6B7280" },
+  cached: { label: "CACHED", color: "#8B95A3" },
   forked: { label: "FORKED", color: "#F59E0B" },
   downstream: { label: "DOWNSTREAM", color: "#38BDF8" },
 };
@@ -45,7 +47,9 @@ interface ReplayDiffProps {
 
 export default function ReplayDiff({ compact = false }: ReplayDiffProps) {
   return (
-    <div style={{ background: "#0A0A0A", border: "1px solid rgba(150,190,220,0.22)", boxShadow: "0 20px 50px -20px rgba(60,90,120,0.35), 0 0 0 1px rgba(190,220,239,0.06)", padding: compact ? "18px 20px" : "28px 32px", fontFamily: "var(--font-mono)" }}>
+    <div className="arctic-code-block" style={{ background: "#0A0A0A", boxShadow: "0 10px 24px -8px rgba(15,23,32,0.55), 0 2px 6px -2px rgba(15,23,32,0.4)", fontFamily: "var(--font-mono)" }}>
+      <WindowChrome title="replay.diff — get_capital" />
+      <div style={{ padding: compact ? "18px 20px" : "28px 32px" }}>
       {!compact && (
         <p style={{ fontSize: "0.8125rem", color: "#D4D4D4", marginBottom: 18, lineHeight: 1.6 }}>
           Forked at <span style={{ color: "#F59E0B" }}>&apos;execute_tool get_capital&apos;</span> with changes:{" "}
@@ -86,7 +90,7 @@ export default function ReplayDiff({ compact = false }: ReplayDiffProps) {
               </div>
               {row.diff && (
                 <div style={{ marginLeft: 4, marginTop: 4, paddingLeft: 10, borderLeft: "2px solid #F59E0B", fontSize: "0.75rem" }}>
-                  <div style={{ color: "#6B7280" }}>{row.diff.field}</div>
+                  <div style={{ color: "#8B95A3" }}>{row.diff.field}</div>
                   <div style={{ color: "#F87171" }}>− {row.diff.before}</div>
                   <div style={{ color: "#4ADE80" }}>+ {row.diff.after}</div>
                 </div>
@@ -99,6 +103,7 @@ export default function ReplayDiff({ compact = false }: ReplayDiffProps) {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
