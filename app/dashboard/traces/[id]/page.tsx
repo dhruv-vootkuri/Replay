@@ -67,7 +67,7 @@ export default function TraceDetailPage() {
             <button
               onClick={() => setShowIds((v) => !v)}
               className={`rounded-lg border px-3 py-2 text-xs transition-colors ${
-                showIds ? "border-signal/50 bg-signal/10 text-signal" : "border-white/[0.08] text-dim-starlight hover:text-starlight"
+                showIds ? "border-signal/50 bg-signal/10 text-signal" : "border-black/[0.10] text-dim-starlight hover:text-starlight"
               }`}
             >
               {showIds ? "Hide span IDs" : "Show span IDs"}
@@ -97,7 +97,7 @@ export default function TraceDetailPage() {
               <Link
                 key={r.replay_trace_id}
                 href={`/dashboard/replays/${r.replay_trace_id}`}
-                className="rounded bg-white/[0.04] px-2 py-1 font-[family-name:var(--font-mono)] text-xs text-dim-starlight hover:text-signal"
+                className="rounded bg-black/[0.05] px-2 py-1 font-[family-name:var(--font-mono)] text-xs text-dim-starlight hover:text-signal"
               >
                 {shortId(r.replay_trace_id, 12)} →
               </Link>
@@ -174,12 +174,12 @@ function SpanRow({
     <button
       onClick={onClick}
       className={`group grid grid-cols-[minmax(0,1fr)_120px] items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors ${
-        active ? "bg-signal/10" : "hover:bg-white/[0.03]"
+        active ? "bg-signal/10" : "hover:bg-black/[0.03]"
       }`}
     >
       <div className="flex min-w-0 items-center gap-2" style={{ paddingLeft: span.depth * 16 }}>
         {span.depth > 0 && <span className="text-dim-starlight/25">└</span>}
-        <span className="flex-shrink-0" style={{ color: span.is_forkable ? KIND_META.tool.color : "#334155" }}>
+        <span className="flex-shrink-0" style={{ color: span.is_forkable ? KIND_META.tool.color : "#DCE3EA" }}>
           {span.is_forkable ? "◆" : "·"}
         </span>
         <KindBadge kind={span.kind} />
@@ -191,7 +191,7 @@ function SpanRow({
       </div>
       {/* mini waterfall */}
       <div className="relative h-4">
-        <div className="absolute inset-y-0 left-0 right-0 my-auto h-px bg-white/[0.05]" />
+        <div className="absolute inset-y-0 left-0 right-0 my-auto h-px bg-black/[0.05]" />
         <div
           className="absolute inset-y-0 my-auto h-2 rounded-full"
           style={{
@@ -288,7 +288,7 @@ function Inspector({
 
       {/* Fork zone */}
       {span.is_forkable && (
-        <div className="mt-5 border-t border-white/[0.06] pt-4">
+        <div className="mt-5 border-t border-black/[0.08] pt-4">
           {!forking && !forkResult && (
             <button
               onClick={onStartFork}
@@ -312,7 +312,7 @@ function Inspector({
               <DiffView replay={forkResult} />
               <button
                 onClick={onStartFork}
-                className="w-full rounded-lg border border-white/[0.08] py-2 text-sm text-dim-starlight transition-colors hover:text-starlight"
+                className="w-full rounded-lg border border-black/[0.10] py-2 text-sm text-dim-starlight transition-colors hover:text-starlight"
               >
                 Fork again
               </button>
@@ -349,13 +349,13 @@ function ForkForm({
                 rows={3}
                 value={values[k]}
                 onChange={(e) => setValues((s) => ({ ...s, [k]: e.target.value }))}
-                className="w-full resize-y rounded-lg border border-white/[0.08] bg-deep-space/60 px-3 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
+                className="w-full resize-y rounded-lg border border-black/[0.10] bg-black/[0.04] px-3 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
               />
             ) : (
               <input
                 value={values[k]}
                 onChange={(e) => setValues((s) => ({ ...s, [k]: e.target.value }))}
-                className="w-full rounded-lg border border-white/[0.08] bg-deep-space/60 px-3 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
+                className="w-full rounded-lg border border-black/[0.10] bg-black/[0.04] px-3 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
               />
             )}
           </div>
@@ -370,7 +370,7 @@ function ForkForm({
         </button>
         <button
           onClick={onCancel}
-          className="rounded-lg border border-white/[0.08] px-4 py-2 text-sm text-dim-starlight transition-colors hover:text-starlight"
+          className="rounded-lg border border-black/[0.10] px-4 py-2 text-sm text-dim-starlight transition-colors hover:text-starlight"
         >
           Cancel
         </button>
@@ -382,9 +382,9 @@ function ForkForm({
 // ── Small building blocks ────────────────────────────────────────────
 function Meta({ label, value, accent }: { label: string; value: React.ReactNode; accent?: string }) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-surface/30 px-3 py-2">
+    <div className="rounded-lg border border-black/[0.08] bg-surface/30 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wide text-dim-starlight/50">{label}</div>
-      <div className="mt-0.5 text-sm font-medium" style={{ color: accent ?? "#F1F5F9" }}>
+      <div className="mt-0.5 text-sm font-medium" style={{ color: accent ?? "#0B0E14" }}>
         {value}
       </div>
     </div>
@@ -393,7 +393,7 @@ function Meta({ label, value, accent }: { label: string; value: React.ReactNode;
 
 function Facet({ k, v }: { k: string; v: string }) {
   return (
-    <span className="rounded bg-white/[0.04] px-2 py-1 font-[family-name:var(--font-mono)] text-[11px]">
+    <span className="rounded bg-black/[0.05] px-2 py-1 font-[family-name:var(--font-mono)] text-[11px]">
       <span className="text-dim-starlight/50">{k} </span>
       <span className="text-starlight">{v}</span>
     </span>
@@ -405,7 +405,7 @@ function Block({ label, children, mono }: { label: string; children: React.React
     <div>
       <div className="mb-1 text-[11px] uppercase tracking-wide text-dim-starlight/50">{label}</div>
       <div
-        className={`max-h-48 overflow-y-auto dash-scroll rounded-lg border border-white/[0.06] bg-deep-space/50 px-3 py-2 text-xs leading-relaxed text-dim-starlight/90 ${
+        className={`max-h-48 overflow-y-auto dash-scroll rounded-lg border border-black/[0.08] bg-black/[0.04] px-3 py-2 text-xs leading-relaxed text-dim-starlight/90 ${
           mono ? "font-[family-name:var(--font-mono)]" : ""
         }`}
       >

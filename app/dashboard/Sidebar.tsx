@@ -49,16 +49,8 @@ const NAV: NavItem[] = [
 function Brand() {
   return (
     <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5">
-      <span className="relative flex h-8 w-8 items-center justify-center">
-        <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-          <circle cx="6" cy="9" r="1.6" fill="#38BDF8" />
-          <circle cx="15" cy="5" r="1.6" fill="#38BDF8" />
-          <circle cx="23" cy="11" r="1.6" fill="#38BDF8" />
-          <circle cx="12" cy="16" r="1.6" fill="#38BDF8" />
-          <circle cx="20" cy="22" r="1.6" fill="#38BDF8" />
-          <path d="M6 9l9-4 8 6-11 5 8 6" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" fill="none" strokeLinejoin="round" />
-        </svg>
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/floe-header-icon.png" alt="" width={28} height={28} aria-hidden="true" style={{ display: "block", height: 28, width: "auto" }} />
       <div className="leading-tight">
         <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-starlight">
           Floe
@@ -84,7 +76,7 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
               active
                 ? "bg-signal/10 text-starlight"
-                : "text-dim-starlight hover:bg-white/[0.04] hover:text-starlight"
+                : "text-dim-starlight hover:bg-black/[0.04] hover:text-starlight"
             }`}
           >
             {active && (
@@ -103,7 +95,7 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
 
 function StatusFooter() {
   return (
-    <div className="border-t border-white/[0.06] px-5 py-4">
+    <div className="border-t border-black/[0.08] px-5 py-4">
       <div className="flex items-center gap-2 text-xs text-dim-starlight">
         <span className="dash-live-dot h-2 w-2 rounded-full bg-pulse" />
         Tracer connected
@@ -146,16 +138,10 @@ export default function Sidebar() {
       {/* Mobile top bar — replaces the fixed 236px sidebar below md, which
           otherwise ate ~60% of a phone viewport and clipped every page's
           content off-screen. */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] bg-[#0B1120] px-4 py-3 md:hidden">
+      <div className="flex items-center justify-between border-b border-black/[0.08] bg-[#EEF2F6] px-4 py-3 md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <svg width="24" height="24" viewBox="0 0 30 30" fill="none">
-            <circle cx="6" cy="9" r="1.6" fill="#38BDF8" />
-            <circle cx="15" cy="5" r="1.6" fill="#38BDF8" />
-            <circle cx="23" cy="11" r="1.6" fill="#38BDF8" />
-            <circle cx="12" cy="16" r="1.6" fill="#38BDF8" />
-            <circle cx="20" cy="22" r="1.6" fill="#38BDF8" />
-            <path d="M6 9l9-4 8 6-11 5 8 6" stroke="#38BDF8" strokeWidth="1" strokeOpacity="0.5" fill="none" strokeLinejoin="round" />
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/floe-header-icon.png" alt="" width={22} height={22} aria-hidden="true" style={{ display: "block", height: 22, width: "auto" }} />
           <span className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-starlight">
             Floe
           </span>
@@ -165,14 +151,14 @@ export default function Sidebar() {
           onClick={() => setOpen(true)}
           aria-label="Open navigation"
           aria-expanded={open}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-white/[0.06] hover:text-starlight"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-black/[0.06] hover:text-starlight"
         >
           <Icon d="M4 6h16M4 12h16M4 18h16" />
         </button>
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-[236px] flex-shrink-0 flex-col border-r border-white/[0.06] bg-[#0B1120] md:flex">
+      <aside className="hidden w-[236px] flex-shrink-0 flex-col border-r border-black/[0.08] bg-[#EEF2F6] md:flex">
         <Brand />
         <NavList pathname={pathname} />
         <StatusFooter />
@@ -186,14 +172,14 @@ export default function Sidebar() {
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
-          <aside className="absolute left-0 top-0 flex h-full w-[260px] max-w-[80vw] flex-col bg-[#0B1120]">
+          <aside className="absolute left-0 top-0 flex h-full w-[260px] max-w-[80vw] flex-col bg-[#EEF2F6]">
             <div className="flex items-center justify-between">
               <Brand />
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close navigation"
-                className="mr-4 flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-white/[0.06] hover:text-starlight"
+                className="mr-4 flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-black/[0.06] hover:text-starlight"
               >
                 <Icon d="M6 6l12 12M18 6L6 18" />
               </button>

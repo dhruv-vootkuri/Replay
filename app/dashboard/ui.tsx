@@ -15,7 +15,7 @@ export function PageHeader({
   breadcrumb?: { label: string; href: string }[];
 }) {
   return (
-    <div className="sticky top-0 z-10 border-b border-white/[0.06] bg-deep-space/80 px-8 py-5 backdrop-blur-md">
+    <div className="sticky top-0 z-10 border-b border-black/[0.08] bg-deep-space/80 px-8 py-5 backdrop-blur-md">
       <div className="flex items-start justify-between gap-4">
         <div>
           {breadcrumb && (
@@ -55,7 +55,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-white/[0.06] bg-surface/40 p-5 ${className}`}
+      className={`rounded-xl border border-black/[0.08] bg-surface/40 p-5 ${className}`}
     >
       {title && (
         <div className="mb-4 flex items-baseline justify-between">

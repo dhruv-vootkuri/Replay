@@ -18,7 +18,7 @@ export function KpiTile({
   delta?: { value: string; positive: boolean };
 }) {
   return (
-    <div className="dash-fade-in rounded-xl border border-white/[0.06] bg-surface/40 p-5">
+    <div className="dash-fade-in rounded-xl border border-black/[0.08] bg-surface/40 p-5">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wide text-dim-starlight/70">{label}</span>
         <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent }} />

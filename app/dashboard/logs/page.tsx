@@ -40,7 +40,7 @@ export default function LogsPage() {
         title="Logs"
         subtitle="Live activity from the tracer, engine, loader, and tools."
         right={
-          <div className="flex items-center gap-2 rounded-lg border border-white/[0.08] px-3 py-2 text-xs text-dim-starlight">
+          <div className="flex items-center gap-2 rounded-lg border border-black/[0.10] px-3 py-2 text-xs text-dim-starlight">
             <span className="dash-live-dot h-2 w-2 rounded-full bg-pulse" />
             streaming
           </div>
@@ -53,7 +53,7 @@ export default function LogsPage() {
           <button
             onClick={() => setLevel("all")}
             className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
-              level === "all" ? "border-signal/50 bg-signal/10 text-signal" : "border-white/[0.08] text-dim-starlight hover:text-starlight"
+              level === "all" ? "border-signal/50 bg-signal/10 text-signal" : "border-black/[0.10] text-dim-starlight hover:text-starlight"
             }`}
           >
             all <span className="ml-1 tabular-nums opacity-60">{logs.length}</span>
@@ -67,9 +67,9 @@ export default function LogsPage() {
                 onClick={() => setLevel(active ? "all" : lv)}
                 className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors"
                 style={{
-                  borderColor: active ? `${m.color}80` : "rgba(255,255,255,0.08)",
+                  borderColor: active ? `${m.color}80` : "rgba(11,14,20,0.10)",
                   backgroundColor: active ? `${m.color}14` : "transparent",
-                  color: active ? m.color : "#94A3B8",
+                  color: active ? m.color : "#48505C",
                 }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: m.color }} />
@@ -81,7 +81,7 @@ export default function LogsPage() {
             <select
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="rounded-lg border border-white/[0.08] bg-surface/40 px-2.5 py-1.5 text-xs text-starlight focus:border-signal/50 focus:outline-none"
+              className="rounded-lg border border-black/[0.10] bg-surface/40 px-2.5 py-1.5 text-xs text-starlight focus:border-signal/50 focus:outline-none"
             >
               <option value="all" className="bg-surface">all sources</option>
               {SOURCES.map((s) => (
@@ -93,7 +93,7 @@ export default function LogsPage() {
             <button
               onClick={() => setWrap((w) => !w)}
               className={`rounded-lg border px-3 py-1.5 text-xs transition-colors ${
-                wrap ? "border-signal/50 text-signal" : "border-white/[0.08] text-dim-starlight hover:text-starlight"
+                wrap ? "border-signal/50 text-signal" : "border-black/[0.10] text-dim-starlight hover:text-starlight"
               }`}
             >
               wrap
@@ -110,45 +110,54 @@ export default function LogsPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Filter log lines…"
-            className="w-full rounded-lg border border-white/[0.08] bg-surface/40 py-2 pl-9 pr-3 text-sm text-starlight placeholder:text-dim-starlight/40 focus:border-signal/50 focus:outline-none"
+            className="w-full rounded-lg border border-black/[0.10] bg-surface/40 py-2 pl-9 pr-3 text-sm text-starlight placeholder:text-dim-starlight/40 focus:border-signal/50 focus:outline-none"
           />
         </div>
 
-        {/* Terminal */}
-        <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#070B12]">
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-2">
+        {/* Terminal — deliberately dark (macOS-Terminal-style semi-dark,
+            not pure black) rather than the light theme used everywhere
+            else on this page: a real terminal reads as more authentic
+            dark, and this mirrors the marketing site's LogStream mockup
+            (app/components/product/LogStream.tsx), which is an explicit
+            "faithful reproduction" of this exact panel. Text colors here
+            are literal light-on-dark values, not the shared
+            starlight/dim-starlight/signal tokens (which are ink/slate/
+            frost-blue now and would be illegible on a dark panel). */}
+        <div className="overflow-hidden rounded-xl border border-white/[0.08]" style={{ background: "#1E1E1E" }}>
+          <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-2">
             <div className="flex gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#F43F5E]/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#F59E0B]/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#34D399]/60" />
             </div>
-            <span className="font-[family-name:var(--font-mono)] text-[11px] text-dim-starlight/50">
+            <span className="font-[family-name:var(--font-mono)] text-[11px]" style={{ color: "#828282" }}>
               {filtered.length} lines
             </span>
           </div>
           <div className="dash-scroll max-h-[62vh] overflow-y-auto px-2 py-2 font-[family-name:var(--font-mono)] text-[12px] leading-relaxed">
             {filtered.length === 0 ? (
-              <div className="px-3 py-8 text-center text-dim-starlight/40">No matching log lines.</div>
+              <div className="px-3 py-8 text-center" style={{ color: "#666666" }}>No matching log lines.</div>
             ) : (
               filtered.map((l) => {
                 const m = LOG_LEVEL_META[l.level];
                 return (
                   <div
                     key={l.id}
-                    className={`flex gap-3 rounded px-3 py-1 hover:bg-white/[0.03] ${wrap ? "" : "items-center"}`}
+                    className={`flex gap-3 rounded px-3 py-1 hover:bg-white/[0.05] ${wrap ? "" : "items-center"}`}
                   >
-                    <span className="flex-shrink-0 text-dim-starlight/40" title={fmtRelativeTime(l.ts)}>
+                    <span className="flex-shrink-0" style={{ color: "#828282" }} title={fmtRelativeTime(l.ts)}>
                       {fmtClock(l.ts)}
                     </span>
                     <span className="w-14 flex-shrink-0 font-bold" style={{ color: m.color }}>
                       {m.label}
                     </span>
-                    <span className="w-16 flex-shrink-0 text-boundary/80">{l.source}</span>
-                    <span className={`text-dim-starlight/90 ${wrap ? "break-words" : "truncate"}`}>{l.message}</span>
+                    <span className="w-16 flex-shrink-0" style={{ color: "#8B95A3" }}>{l.source}</span>
+                    <span className={`${wrap ? "break-words" : "truncate"}`} style={{ color: "#D4D4D4" }}>{l.message}</span>
                     {l.trace_id && (
                       <Link
                         href={`/dashboard/traces/${l.trace_id}`}
-                        className="ml-auto flex-shrink-0 text-signal/70 hover:text-signal"
+                        className="ml-auto flex-shrink-0 transition-colors"
+                        style={{ color: "#5FA8D3" }}
                       >
                         {shortId(l.trace_id, 10)}
                       </Link>

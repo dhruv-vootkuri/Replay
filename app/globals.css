@@ -2,19 +2,21 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* ─── Core palette — monochrome ────────────────── */
-  --color-deep-space:     #000000;
-  --color-surface:        #0A0A0A;
-  --color-starlight:      #FFFFFF;
-  --color-dim-starlight:  #8A8A8A;
-  --color-signal:         #FFFFFF;
+  /* ─── Core palette — monochrome, matches the marketing site's arctic
+     palette (--arctic-bg/--ink/--slate/--frost-700 below) so the console
+     reads as the same product rather than a separate dark surface. ── */
+  --color-deep-space:     #FFFFFF;
+  --color-surface:        #EEF2F6;
+  --color-starlight:      #0B0E14;
+  --color-dim-starlight:  #48505C;
+  --color-signal:         #1F4E6B;
 
-  /* ─── Per-tab accents — flattened to white; tabs are
+  /* ─── Per-tab accents — flattened to ink; tabs are
      differentiated by constellation shape + label, not hue ── */
-  --color-anomaly:        #FFFFFF;
-  --color-divergence:     #FFFFFF;
-  --color-boundary:       #FFFFFF;
-  --color-pulse:          #FFFFFF;
+  --color-anomaly:        #0B0E14;
+  --color-divergence:     #0B0E14;
+  --color-boundary:       #0B0E14;
+  --color-pulse:          #0B0E14;
 
   /* ─── Typography ───────────────────────────────── */
   --font-display: "Space Grotesk", system-ui, sans-serif;
@@ -207,7 +209,7 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.07;
+    opacity: 0.1;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><g fill='none' stroke='%232E6E96' stroke-width='1'><path d='M-50 80 Q 150 20 300 80 T 650 80'/><path d='M-50 160 Q 150 100 300 160 T 650 160'/><path d='M-50 240 Q 150 180 300 240 T 650 240'/><path d='M-50 320 Q 150 260 300 320 T 650 320'/><path d='M-50 400 Q 150 340 300 400 T 650 400'/><path d='M-50 480 Q 150 420 300 480 T 650 480'/><path d='M-50 560 Q 150 500 300 560 T 650 560'/></g></svg>");
     background-size: 600px 600px;
     background-repeat: repeat;
@@ -292,14 +294,14 @@ body {
 /* ─── Dashboard utilities ──────────────────────────────────────────── */
 .dash-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #2A2A2A transparent;
+  scrollbar-color: #C7D0D9 transparent;
 }
 .dash-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .dash-scroll::-webkit-scrollbar-thumb {
-  background: #2A2A2A;
+  background: #C7D0D9;
   border-radius: 9999px;
 }
-.dash-scroll::-webkit-scrollbar-thumb:hover { background: #444444; }
+.dash-scroll::-webkit-scrollbar-thumb:hover { background: #A9B6C4; }
 
 /* Faint constellation grid backdrop for the dashboard canvas */
 .dash-grid {

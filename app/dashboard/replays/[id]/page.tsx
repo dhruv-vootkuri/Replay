@@ -37,7 +37,7 @@ export default function ReplayDetailPage() {
           orig && (
             <Link
               href={`/dashboard/traces/${orig.trace_id}`}
-              className="rounded-lg border border-white/[0.08] px-3 py-2 text-xs text-dim-starlight transition-colors hover:text-signal"
+              className="rounded-lg border border-black/[0.10] px-3 py-2 text-xs text-dim-starlight transition-colors hover:text-signal"
             >
               ← Original trace
             </Link>
@@ -75,7 +75,7 @@ export default function ReplayDetailPage() {
 
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-surface/30 px-3 py-2">
+    <div className="rounded-lg border border-black/[0.08] bg-surface/30 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wide text-dim-starlight/50">{label}</div>
       <div className="mt-0.5 text-sm font-medium text-starlight">{value}</div>
     </div>

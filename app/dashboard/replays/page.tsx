@@ -24,13 +24,13 @@ export default function ReplaysPage() {
                 <Link
                   key={r.replay_trace_id}
                   href={`/dashboard/replays/${r.replay_trace_id}`}
-                  className="group rounded-xl border border-white/[0.06] bg-surface/40 p-5 transition-colors hover:border-signal/30"
+                  className="group rounded-xl border border-black/[0.08] bg-surface/40 p-5 transition-colors hover:border-signal/30"
                 >
                   <div className="flex items-center justify-between">
                     <Mono className="text-signal group-hover:underline">{shortId(r.replay_trace_id, 16)}</Mono>
                     <span
                       className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                        changed ? "bg-anomaly/15 text-anomaly" : "bg-white/[0.05] text-dim-starlight/60"
+                        changed ? "bg-anomaly/15 text-anomaly" : "bg-black/[0.05] text-dim-starlight/60"
                       }`}
                     >
                       {changed ? "output changed" : "output stable"}

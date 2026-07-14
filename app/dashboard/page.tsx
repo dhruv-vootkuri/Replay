@@ -80,7 +80,7 @@ export default function OverviewPage() {
             accent={totals.errorRate > 0 ? "#F43F5E" : "#34D399"}
           />
           <KpiTile label="Replays" value={fmtNumber(totals.replayCount)} accent="#38BDF8" />
-          <KpiTile label="Total spans" value={fmtNumber(totals.spanCount)} accent="#94A3B8" />
+          <KpiTile label="Total spans" value={fmtNumber(totals.spanCount)} accent="#48505C" />
         </div>
 
         {/* Charts row 1 */}
@@ -124,7 +124,7 @@ export default function OverviewPage() {
           <div className="-mx-1 overflow-x-auto dash-scroll">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-left text-[11px] uppercase tracking-wide text-dim-starlight/60">
+                <tr className="border-b border-black/[0.08] text-left text-[11px] uppercase tracking-wide text-dim-starlight/60">
                   <th className="px-2 py-2 font-medium">Trace</th>
                   <th className="px-2 py-2 font-medium">Agent</th>
                   <th className="px-2 py-2 font-medium">Query</th>
@@ -136,7 +136,7 @@ export default function OverviewPage() {
               </thead>
               <tbody>
                 {recent.map((t) => (
-                  <tr key={t.trace_id} className="border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
+                  <tr key={t.trace_id} className="border-b border-black/[0.05] transition-colors hover:bg-black/[0.02]">
                     <td className="px-2 py-2.5">
                       <Link href={`/dashboard/traces/${t.trace_id}`} className="text-signal hover:underline">
                         <Mono className="text-signal">{shortId(t.trace_id, 12)}</Mono>

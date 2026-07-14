@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-const INK = "#94A3B8";
-const INK_MUTED = "#475569";
-const GRID = "rgba(148,163,184,0.10)";
-const SURFACE = "#0F172A";
+const INK = "#6B7480";
+const INK_MUTED = "#48505C";
+const GRID = "rgba(11,14,20,0.08)";
+const SURFACE = "#EEF2F6";
 
 function niceMax(v: number): number {
   if (v <= 0) return 1;
@@ -19,7 +19,7 @@ function niceMax(v: number): number {
 function Tip({ leftPct, topPx, children }: { leftPct: number; topPx: number; children: React.ReactNode }) {
   return (
     <div
-      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-lg border border-white/10 bg-[#0B1120] px-2.5 py-1.5 text-xs shadow-xl"
+      className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-lg border border-black/10 bg-white px-2.5 py-1.5 text-xs shadow-xl"
       style={{ left: `${leftPct}%`, top: topPx - 8, whiteSpace: "nowrap" }}
     >
       {children}
@@ -125,7 +125,7 @@ export function HBarChart({
             <div className="w-28 flex-shrink-0 truncate text-right font-[family-name:var(--font-mono)] text-[11px] text-dim-starlight">
               {d.label}
             </div>
-            <div className="relative h-5 flex-1 overflow-hidden rounded bg-white/[0.03]">
+            <div className="relative h-5 flex-1 overflow-hidden rounded bg-black/[0.05]">
               <div
                 className="absolute inset-y-0 left-0 rounded transition-all"
                 style={{ width: `${Math.max(pct, 1.5)}%`, backgroundColor: c }}
@@ -187,7 +187,7 @@ export function DonutChart({
           offset += len;
           return el;
         })}
-        <text x={size / 2} y={size / 2 - 4} textAnchor="middle" className="rotate-90" fontSize={22} fontWeight={700} fill="#F1F5F9" transform={`rotate(90 ${size / 2} ${size / 2})`}>
+        <text x={size / 2} y={size / 2 - 4} textAnchor="middle" className="rotate-90" fontSize={22} fontWeight={700} fill="#0B0E14" transform={`rotate(90 ${size / 2} ${size / 2})`}>
           {centerValue}
         </text>
         <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fontSize={9} fill={INK} transform={`rotate(90 ${size / 2} ${size / 2})`}>

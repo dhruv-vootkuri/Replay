@@ -16,7 +16,7 @@ interface LegalDocProps {
 // the one-scroll marketing narrative.
 export default function LegalDoc({ title, updated, sections }: LegalDocProps) {
   return (
-    <section style={{ padding: "160px 24px 140px" }}>
+    <section style={{ padding: "160px 24px 220px" }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
         <Link
           href="/"

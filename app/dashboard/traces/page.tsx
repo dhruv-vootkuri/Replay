@@ -60,7 +60,7 @@ export default function TracesPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search trace id, agent, or query…"
-              className="w-full rounded-lg border border-white/[0.08] bg-surface/40 py-2 pl-9 pr-3 text-sm text-starlight placeholder:text-dim-starlight/40 focus:border-signal/50 focus:outline-none"
+              className="w-full rounded-lg border border-black/[0.10] bg-surface/40 py-2 pl-9 pr-3 text-sm text-starlight placeholder:text-dim-starlight/40 focus:border-signal/50 focus:outline-none"
             />
           </div>
           <Select label="Agent" value={agent} onChange={setAgent} options={AGENTS} />
@@ -86,7 +86,7 @@ export default function TracesPage() {
             <div className="overflow-x-auto dash-scroll">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-left text-[11px] uppercase tracking-wide text-dim-starlight/60">
+                  <tr className="border-b border-black/[0.08] text-left text-[11px] uppercase tracking-wide text-dim-starlight/60">
                     <th className="px-3 py-2 font-medium">Trace ID</th>
                     <th className="px-3 py-2 font-medium">Agent</th>
                     <th className="px-3 py-2 font-medium">Query</th>
@@ -99,7 +99,7 @@ export default function TracesPage() {
                 </thead>
                 <tbody>
                   {filtered.map((t) => (
-                    <tr key={t.trace_id} className="group border-b border-white/[0.03] transition-colors hover:bg-white/[0.02]">
+                    <tr key={t.trace_id} className="group border-b border-black/[0.05] transition-colors hover:bg-black/[0.02]">
                       <td className="px-3 py-3">
                         <Link href={`/dashboard/traces/${t.trace_id}`}>
                           <Mono className="text-signal group-hover:underline">{shortId(t.trace_id, 14)}</Mono>
@@ -155,7 +155,7 @@ function Select({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-white/[0.08] bg-surface/40 px-2.5 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
+        className="rounded-lg border border-black/[0.10] bg-surface/40 px-2.5 py-2 text-sm text-starlight focus:border-signal/50 focus:outline-none"
       >
         {options.map((o) => (
           <option key={o} value={o} className="bg-surface text-starlight">

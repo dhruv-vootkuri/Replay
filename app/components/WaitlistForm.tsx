@@ -37,7 +37,7 @@ export default function WaitlistForm() {
   return (
     <section
       id="waitlist"
-      style={{ position: "relative", borderTop: "1px solid var(--hairline)", padding: "140px 24px 0", overflow: "hidden", scrollMarginTop: 90 }}
+      style={{ position: "relative", padding: "140px 24px 0", overflow: "hidden", scrollMarginTop: 90 }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -52,9 +52,10 @@ export default function WaitlistForm() {
           objectFit: "cover",
           filter: "grayscale(1) brightness(1.25) contrast(0.85)",
           opacity: 0.2,
+          maskImage: "linear-gradient(to bottom, transparent 0, black 160px)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 160px)",
         }}
       />
-      <div className="arctic-topo" />
       <div style={{ position: "relative", zIndex: 1, maxWidth: 640, margin: "0 auto", paddingBottom: 140, textAlign: "center" }}>
         <Reveal>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--ink)", marginBottom: 16 }}>

@@ -23,8 +23,10 @@ removed. Nothing renders it today; leave the file alone rather than
   `/privacy` and `/terms` (see below), all in the same route group so they
   share a layout (`Header`) without that chrome leaking onto
   `app/dashboard/`, which has its own layout/Sidebar and is a separate
-  product surface (the real console, still dark-themed with functional
-  chart color — not part of the arctic redesign). `Footer` is not in the
+  product surface (the real console — as of the arctic-console pass below,
+  it now shares the marketing site's light palette and typography, though
+  it's still a distinct route group/layout, not literally the arctic
+  redesign's markup). `Footer` is not in the
   layout — it's rendered inside `WaitlistForm.tsx` (see Atmospheric video
   below) so the closing video can span behind it, which means `/privacy`
   and `/terms` don't get a footer of their own (they carry a "← Back to
@@ -46,13 +48,25 @@ scroll-jacking, just `scroll-behavior: smooth` + anchor links):
 Landing (`/`) — hero (real replay-diff UI as the hero visual, not
 decoration, `minHeight: 100vh` so the next section never peeks above the
 fold; its bottom padding and the following ReplayDiff section's top
-padding are both intentionally tight — 48px/56px, not the ~100px/120px an
-earlier pass used — so the trace visual rises into view soon after the
+padding are both intentionally tight — 32px/36px (tightened further from
+an original 48px/56px, itself already tighter than the ~100px/120px an
+earlier pass used) — so the trace visual rises into view soon after the
 fold instead of after a long dead scroll, and the hero's background video
 layer carries a bottom mask-fade so it dissolves into the page rather than
 cutting off on a hard line; the ReplayDiff wrapper's `maxWidth` matches the
 `#traces`/`#replays` wrapper at 1100, not a wider one, so all three real-UI
-blocks share one column width), real KPI numbers as immediate credibility,
+blocks share one column width), real KPI numbers as immediate credibility
+— the ReplayDiff dashboard image and the KPI strip now live in one
+combined `<section>` with no divider between them (an earlier pass had
+them as two sections split by a hairline border, removed per explicit
+direction so the stat numbers read as glued to the dashboard image rather
+than a separate block; the section now carries **no** border of its own —
+it used to also keep a bottom border, which combined with `#traces`'
+own top border to render as a doubled line, since removed so every
+chapter boundary is a single hairline rather than each boundary having
+its own ad hoc treatment — and the same 60px/140px bottom/top padding
+pattern used before #replays still carries it into the Traces chapter
+below),
 `#traces` (real trace waterfall + log stream, large), `#replays` (the real
 recorded fork example
 — `get_capital`, country Zorblax→Paris, 6 downstream spans — with
@@ -60,6 +74,17 @@ cached/forked/downstream callouts), then `#waitlist` (`WaitlistForm`,
 `app/components/WaitlistForm.tsx` — email capture, then `Footer`) as the
 close. There's no dashboard-screenshot preview here anymore — see the
 `dashboard-preview.png` note above.
+
+The hairline rule across the middle chapters is now uniform: each of
+`#traces` and `#replays` owns exactly one `borderTop`, and the section
+before it carries no matching `borderBottom` — one line per boundary,
+not zero or two. `#waitlist` is the deliberate exception: instead of a
+hairline, the `#replays`→`#waitlist` boundary is now a gradient dissolve,
+the same technique as the hero's bottom mask-fade (see below) — a
+`maskImage`/`WebkitMaskImage` on `floe-waitlist-still.jpg` fading it in
+from `transparent` to fully visible over its first 160px, so the section
+starts blending in rather than cutting on a hard line. Don't add back a
+`borderTop`/`borderBottom` hairline at that specific boundary.
 
 `/privacy` and `/terms` (`app/(marketing)/privacy`, `app/(marketing)/terms`,
 both built on the shared `LegalDoc.tsx`) are a deliberate, narrow exception
@@ -177,9 +202,14 @@ flat border-color, so it reads as an ice edge, not a rectangle),
 `.frost-hover` (opt-in hover intensification — see gotcha below),
 `.frost-halo` (a soft `filter: drop-shadow` used on the wordmark and
 primary CTAs — "lit from within," not a UI glow), `.arctic-topo` (a
-faint hand-authored contour-line SVG, ~7% opacity, used behind every page's
-hero only — deliberately not tiled sitewide, so it reads as atmosphere,
-not wallpaper), and `.arctic-code-block` (applied to the outer wrapper of
+faint hand-authored contour-line SVG — the "background waves" — at 10%
+opacity, bumped up slightly from an original ~7% per explicit direction.
+Used behind the combined ReplayDiff+KPI section, `#traces`, and `#replays`
+on `/` — deliberately removed from the hero and from `#waitlist`
+(`WaitlistForm`) per explicit direction, and still not tiled sitewide, so
+it reads as atmosphere on those section bodies rather than wallpaper
+everywhere),
+and `.arctic-code-block` (applied to the outer wrapper of
 all three real-UI components — `Waterfall`, `ReplayDiff`, `LogStream` — a
 thin gradient-border ring, same 3-stop icy gradient as
 `AtmosphericVideo`'s reduced-motion fallback, faded in via a `::before`
@@ -245,12 +275,110 @@ screenshot inside a monochrome frame reads as considered, not
 inconsistent). Don't monochrome these components to match the page — that
 would make them *less* credible, not more on-brand.
 
-Shared CSS tokens in `app/globals.css` (`--color-deep-space`,
-`--color-starlight`, etc.) still carry their **old dark values** because
-`app/dashboard/*` consumes them directly via Tailwind classes
-(`bg-deep-space`, `text-dim-starlight`). The marketing site does not use
-those tokens — every marketing component uses literal inline hex — so the
-two surfaces can diverge safely. Don't "fix" this by changing the tokens.
+### Arctic-console pass — `app/dashboard/*` now matches the marketing palette
+
+Per explicit direction ("change [the console] so that it matches the
+styling of the landing page, namely the colors, typography... don't
+touch the content"), the `@theme` tokens in `app/globals.css` that
+`app/dashboard/*` consumes via Tailwind classes (`bg-deep-space`,
+`text-starlight`, `text-dim-starlight`, `bg-signal`, etc.) were flipped
+from their original dark values to light ones matching the marketing
+site's arctic tokens:
+
+| Token | Old (dark) | New (light) | Matches |
+|---|---|---|---|
+| `--color-deep-space` | `#000000` | `#FFFFFF` | `--arctic-bg` |
+| `--color-surface` | `#0A0A0A` | `#EEF2F6` | `--arctic-surface` |
+| `--color-starlight` | `#FFFFFF` | `#0B0E14` | `--ink` |
+| `--color-dim-starlight` | `#8A8A8A` | `#48505C` | `--slate` |
+| `--color-signal` | `#FFFFFF` | `#1F4E6B` | darker than `--frost-700` (`#2E6E96`) |
+| `--color-anomaly/divergence/boundary/pulse` | `#FFFFFF` (flattened, shape/label not hue) | `#0B0E14` (same flattening intent, ink instead of white) | — |
+
+`--color-signal` first landed at `#2E6E96` (exactly `--frost-700`) but was
+darkened again to `#1F4E6B` per explicit follow-up ("make their text a
+bit darker") — it no longer matches an arctic token exactly, it's just a
+deeper shade in the same family. This token drives trace-ID/link text
+sitewide in the dashboard *and* `bg-signal` buttons ("View all traces",
+"Fork here", "Run replay") and the active-nav-item indicator, so darkening
+it moved all of those together, not just link text — that was accepted as
+in-scope rather than treated as a bug.
+
+Typography needed no change — `--font-display`/`--font-body`/`--font-mono`
+were already the same Space Grotesk/Outfit/Space Mono tokens shared by
+both surfaces.
+
+Because those four per-tab accent tokens were already flattened to a
+single non-semantic color pre-change (differentiated by symbol — ✗ − + ◇
+— and label, not hue, per their own comment), retinting them to ink
+instead of white preserves that existing restraint rather than
+introducing a break; it does **not** touch the real functional colors
+(`KIND_META`, `LOG_LEVEL_META`, `REPLAY_TYPE_META` in
+`lib/replay/format.ts` — llm blue/tool green/agent indigo/task amber, log
+levels, red/green diff before-after cards in `DiffView.tsx`), which
+remain exactly as they were: shared with the marketing site's product-UI
+mockups, so changing them here would have altered those too.
+
+Beyond the token flip, every dashboard component's own literal
+Tailwind opacity utilities keyed to `white` (hairlines, hover fills —
+`border-white/[0.06]`, `hover:bg-white/[0.04]`, etc.) were converted to
+the `black` equivalent at roughly the same or slightly higher opacity
+(low-opacity black-on-white reads fainter than the same opacity
+white-on-black), since those don't ride on the theme tokens and wouldn't
+have flipped automatically. A handful of hardcoded hex values also
+changed by hand: `Sidebar.tsx`'s `#0B1120` panel background → `#EEF2F6`.
+Its inline five-dot constellation-logo SVG (a leftover from before the
+Alioth→Floe rebrand, never updated when the marketing header moved to
+`floe-header-icon.png`) was first retinted `#38BDF8` → `#5FA8D3`
+(`--frost-500`) as a stopgap, then replaced entirely per explicit
+follow-up ("add the floe logo to the sidebar instead of the default
+nodes & vertices") — `Brand()` and the mobile top bar in `Sidebar.tsx`
+now render `/floe-header-icon.png` directly (same asset, same pattern as
+`Header.tsx`), so the sidebar and marketing header show the same real
+mark instead of two different logos. `charts.tsx`'s hardcoded
+axis/grid/tooltip colors (`INK`, `INK_MUTED`, `GRID`, `SURFACE` consts,
+donut center-label fill, `Tip` background) remapped to slate/ink
+equivalents; and a couple of "recessed panel" backgrounds
+(`bg-deep-space/50`/`/60` on `ForkForm`'s inputs and `Block`'s code
+display in `traces/[id]/page.tsx`) switched to `bg-black/[0.04]` — a
+plain opacity-on-white token flip would have made those *lighter* than
+the card behind them instead of visually sunken, the opposite of the
+original dark-theme effect. `ui.tsx`'s `PageHeader` sticky bar
+(`bg-deep-space/80` + blur) needed no such fix — a translucent white
+frosted bar over scrolling content is the same "glass" idiom as the
+marketing site's `.frost-panel`, so the plain token flip already reads
+correctly there.
+
+**Deliberate exception — the Logs page's terminal panel stays dark.**
+`logs/page.tsx`'s `{/* Terminal */}` block was first flipped to
+`#EEF2F6` along with everything else in this pass, then explicitly
+reverted per follow-up direction ("make the color scheme... macos's
+default semi-dark scheme"): it's now a hand-picked semi-dark gray
+(`#1E1E1E`, evoking macOS Terminal.app's dark profile — not `#0A0A0A`,
+which reads as closer to pure black) rather than participating in the
+page's light theme. This specifically mirrors
+`app/components/product/LogStream.tsx`, the marketing mockup, whose own
+top comment claims to be a "faithful reproduction of the real
+terminal-styled log stream at app/dashboard/logs" — that relationship
+would otherwise have broken silently when the rest of the dashboard went
+light. Because the block is dark while its surrounding page is light, it
+can't lean on the shared `starlight`/`dim-starlight`/`signal` Tailwind
+tokens for its text (those now resolve to ink/slate/frost-blue, illegible
+on a dark panel) — its timestamp/source/message/link colors are
+hand-set literal light-on-dark hex (`#828282`/`#8B95A3`/`#D4D4D4`/
+`#5FA8D3`) matching `LogStream.tsx`'s own literal values, and its
+hairline/hover utilities use `white/[opacity]` instead of the `black/
+[opacity]` used everywhere else on this page. If you touch this block
+again, keep it dark and keep its text colors self-contained — don't
+"fix" it back onto the shared light tokens.
+
+The marketing site still doesn't consume these tokens at all — every
+marketing component uses literal inline hex against the `--arctic-*`
+custom properties — so this change doesn't create a new coupling between
+the two surfaces, it just makes their *values* match by coincidence of
+shared intent. Don't assume future arctic-palette tweaks (e.g. adjusting
+`--frost-700`) propagate to the dashboard automatically, since the
+dashboard's tokens are separate, independently-set values that merely
+equal the arctic ones today.
 
 ---
 
@@ -363,12 +491,64 @@ hero visual itself, same reasoning as "Why this shape" above:
   edge — see the Landing structure note above)
 - The KPI strip (behind the real Overview numbers, looping)
 
+The hero also has `app/components/hud/VideoColorWindow.tsx` — **not** a
+separate framed video (a boxed/bordered version of this was tried and
+explicitly rejected — "i dont want the video in a new window"). It's a
+second full-bleed `<video>` playing the same `floe-hero.mp4` source,
+positioned identically (`inset: 0`, same `objectFit: cover`) to the
+desaturated `AtmosphericVideo` layer beneath it, so it reads as the same
+background rather than a distinct element. It's masked to an open-ended
+horizontal reveal — transparent up to 52%, fully opaque by 60%, and
+opaque the rest of the way to the hero's right edge (`maskImage:
+linear-gradient(to right, transparent 0%, transparent 52%, black 60%)`)
+— so everything from 60% of the hero's width onward is in color/fully
+opaque. A bounded rectangle version (padded in from all four edges, not
+spanning to the hero's edge) was tried in between and explicitly reverted
+back to this open-ended band — don't reintroduce the rectangle/nested
+vertical-mask wrapper without a fresh explicit ask. Its `grayscale()`
+filter amount and opacity are both driven off that video's own
+`currentTime`/`duration`, tracked via a
+`requestAnimationFrame` loop rather than the `timeupdate` event —
+`timeupdate` only fires a handful of times per second in most browsers,
+which reads as visibly stepped when driving a continuous CSS filter off
+it, so it was swapped for rAF's per-frame updates specifically to make
+the transition smoother. Raw progress is then rescaled by a
+`fullColorAt` prop (default `0.8`) via `Math.min(1, progress /
+fullColorAt)` before easing, so the reveal finishes — grayscale fully
+resolved, opacity fully ramped — 80% through the clip rather than at
+100%, then holds there for the remaining 20% (was explicitly requested;
+don't reset this back to reaching full color only at the very end). The
+rescaled value runs through a smootherstep ease (`6p^5-15p^4+10p^3`,
+Perlin's improved version of an earlier plain smoothstep `p*p*(3-2p)`) —
+its derivative peaks higher at the midpoint than smoothstep while staying
+flatter at both ends, so more of the change happens through the middle
+of the reveal rather than at a constant rate, per explicit "more
+mid-range heavy" direction. A future ask to tune the easing curve or
+`fullColorAt` further isn't a correction of a bug, it's the next
+deliberate step (a `filterExtras` prop appends the same
+`brightness(1.25) contrast(0.85)` the background layer uses, so the two
+layers match in tone everywhere except saturation). Within the masked
+region, grayscale runs 1→0 (gray to full color) and opacity runs the
+`baseOpacity` prop (`0.2`, matching the `AtmosphericVideo` layer's own
+"standard" opacity) →1 (fully opaque) in lockstep — so the masked region
+goes from "standard, subtle background" to fully dominant at the same
+eased rate it goes from gray to color, per explicit direction that this
+region should end up "mostly background dominated rather than intro text
+dominated," independent of and not synced frame-for-frame with the
+`AtmosphericVideo` layer (separate `<video>` element, same src). Renders
+nothing under `prefers-reduced-motion` rather than a static frame, since
+the reveal-over-time is the entire point.
+
 `#waitlist` (`WaitlistForm`) no longer uses `AtmosphericVideo` — per
 explicit direction, it now shows a static still, `public/floe-waitlist-
 still.jpg`, extracted via `ffmpeg -sseof -0.5 -i public/floe-hero.mp4
 -update 1 -frames:v 1 -q:v 3 ...` (the actual last frame of the same
 source footage) and rendered as a plain absolutely-positioned `<img>` with
-the same filter/opacity treatment the video used. If asked to touch this
+the same filter/opacity treatment the video used, plus a top
+`maskImage`/`WebkitMaskImage` fade (`transparent` at 0 to fully visible
+by 160px) so the `#replays`→`#waitlist` boundary reads as the same kind
+of gradient dissolve as the hero's bottom mask-fade, rather than the hard
+`borderTop` hairline this boundary used to have. If asked to touch this
 section's background again, don't reach for `AtmosphericVideo` there —
 the still is the deliberate choice, not a placeholder.
 

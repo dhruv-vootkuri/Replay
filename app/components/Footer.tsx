@@ -8,7 +8,7 @@ export default function Footer() {
   return (
     <footer
       style={{
-        padding: "28px 24px",
+        padding: "28px 24px 100px",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

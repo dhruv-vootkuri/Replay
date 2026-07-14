@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-deep-space text-dim-starlight md:flex-row">
       <Sidebar />
-      <main className="dash-scroll dash-grid flex-1 overflow-y-auto">{children}</main>
+      <main className="dash-scroll dash-grid flex-1 overflow-y-auto pb-24">{children}</main>
     </div>
   );
 }

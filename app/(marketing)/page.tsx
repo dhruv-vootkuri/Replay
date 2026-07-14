@@ -2,6 +2,7 @@ import Waterfall from "@/app/components/product/Waterfall";
 import ReplayDiff from "@/app/components/product/ReplayDiff";
 import LogStream from "@/app/components/product/LogStream";
 import AtmosphericVideo from "@/app/components/hud/AtmosphericVideo";
+import VideoColorWindow from "@/app/components/hud/VideoColorWindow";
 import WaitlistForm from "@/app/components/WaitlistForm";
 import Reveal from "@/app/components/Reveal";
 
@@ -24,7 +25,7 @@ export default function LandingPage() {
           minHeight: "100vh",
           display: "flex",
           alignItems: "center",
-          padding: "160px 24px 48px",
+          padding: "160px 24px 32px",
           boxSizing: "border-box",
           overflow: "hidden",
         }}
@@ -43,7 +44,30 @@ export default function LandingPage() {
             WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
           }}
         />
-        <div className="arctic-topo" />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            overflow: "hidden",
+            pointerEvents: "none",
+            maskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 55%, transparent 100%)",
+          }}
+        >
+          <VideoColorWindow
+            filterExtras="brightness(1.25) contrast(0.85)"
+            baseOpacity={0.2}
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              maskImage: "linear-gradient(to right, transparent 0%, transparent 52%, black 60%)",
+              WebkitMaskImage: "linear-gradient(to right, transparent 0%, transparent 52%, black 60%)",
+            }}
+          />
+        </div>
         <div style={{ position: "relative", zIndex: 1, maxWidth: 1240, margin: "0 auto", width: "100%" }}>
         <Reveal>
         <p
@@ -110,36 +134,33 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trace visual — deliberately kept out of the hero's own viewport
-          (that section plays the atmospheric video once instead) so it's
+      {/* Trace visual + immediate credibility numbers, combined into one
+          section (no divider between them) so the dashboard image and the
+          real Overview numbers beneath it read as a single credibility
+          beat, deliberately kept out of the hero's own viewport (that
+          section plays the atmospheric video once instead) so it's
           invisible on load and only rises into view once the visitor
           scrolls, with real breathing room above it rather than sitting
-          flush against the hero. */}
-      <section style={{ position: "relative", padding: "56px 24px 40px" }}>
+          flush against the hero. The same 60px/140px bottom/top pattern
+          used before #replays carries this section into the Traces
+          chapter below. */}
+      <section
+        style={{
+          position: "relative",
+          padding: "36px 24px 60px",
+        }}
+      >
+        <div className="arctic-topo" />
+        <div style={{ position: "relative", zIndex: 1 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
         <Reveal>
         <ReplayDiff />
         </Reveal>
         </div>
-      </section>
-
-      {/* Immediate credibility: real Overview numbers, not decoration.
-          Flat white, no video — kept close beneath the ReplayDiff block
-          above so the two read as one credibility beat, then the same
-          60px/140px bottom/top pattern used before #replays carries it
-          into the Traces chapter below. */}
-      <section
-        style={{
-          position: "relative",
-          borderTop: "1px solid var(--hairline)",
-          borderBottom: "1px solid var(--hairline)",
-          padding: "32px 24px 60px",
-        }}
-      >
         <div
           style={{
             maxWidth: 1240,
-            margin: "0 auto",
+            margin: "40px auto 0",
             display: "flex",
             flexWrap: "wrap",
             gap: "28px 48px",
@@ -168,6 +189,7 @@ export default function LandingPage() {
           </a>
         </p>
         </Reveal>
+        </div>
       </section>
 
       {/* Traces chapter */}

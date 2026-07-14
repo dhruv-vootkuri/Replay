@@ -16,11 +16,11 @@ export function DiffView({ replay }: { replay: Replay }) {
       )}
 
       {/* Span-by-span */}
-      <div className="rounded-xl border border-white/[0.06] bg-surface/40">
-        <div className="border-b border-white/[0.06] px-4 py-2.5 text-[11px] uppercase tracking-wide text-dim-starlight/60">
+      <div className="rounded-xl border border-black/[0.08] bg-surface/40">
+        <div className="border-b border-black/[0.08] px-4 py-2.5 text-[11px] uppercase tracking-wide text-dim-starlight/60">
           Spans
         </div>
-        <div className="divide-y divide-white/[0.04]">
+        <div className="divide-y divide-black/[0.06]">
           {replay.spans.map((s) => (
             <div key={s.span_id} className="flex flex-col gap-2 px-4 py-3">
               <div className="flex items-center gap-2.5">
@@ -53,7 +53,7 @@ export function DiffView({ replay }: { replay: Replay }) {
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-4 rounded-lg border border-white/[0.06] bg-surface/30 px-4 py-3 text-xs">
+      <div className="flex flex-wrap gap-4 rounded-lg border border-black/[0.08] bg-surface/30 px-4 py-3 text-xs">
         {(["cached", "forked", "downstream"] as const).map((t) => (
           <div key={t} className="flex items-center gap-2">
             <ReplayBadge type={t} />
