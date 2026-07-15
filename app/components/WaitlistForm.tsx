@@ -37,7 +37,14 @@ export default function WaitlistForm() {
   return (
     <section
       id="waitlist"
-      style={{ position: "relative", padding: "140px 24px 0", overflow: "hidden", scrollMarginTop: 90 }}
+      style={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        scrollMarginTop: 90,
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -56,7 +63,23 @@ export default function WaitlistForm() {
           WebkitMaskImage: "linear-gradient(to bottom, transparent 0, black 160px)",
         }}
       />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 640, margin: "0 auto", paddingBottom: 140, textAlign: "center" }}>
+      {/* Text + form block — vertically centered in the space between the
+          fixed header and the footer, not just top-padded under the header
+          the way it used to be. The 140px top padding is kept as a floor so
+          on short viewports the centered content still clears the fixed
+          header (`.header-panel`) rather than drifting underneath it. */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          flex: "1 1 auto",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: "140px 24px 60px",
+        }}
+      >
+      <div style={{ maxWidth: 640, margin: "0 auto", width: "100%", textAlign: "center" }}>
         <Reveal>
         <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--ink)", marginBottom: 16 }}>
           Early access
@@ -189,8 +212,9 @@ export default function WaitlistForm() {
           )}
         </AnimatePresence>
       </div>
+      </div>
 
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
         <Footer />
       </div>
     </section>

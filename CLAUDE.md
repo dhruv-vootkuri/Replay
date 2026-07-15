@@ -476,6 +476,158 @@ exists and still works if a future page wants a background accent, but the
 current pages deliberately don't use it — the real UI components carry
 the visual weight instead (see "Why this shape" above).
 
+## Intro loader — one-time "Floe" splash on first visit
+
+`app/components/IntroLoader.tsx`, rendered by `app/components/
+IntroGate.tsx`, which wraps all of `LandingPage`'s content
+(`app/(marketing)/page.tsx`) — see the "Intro-gated content loading"
+subsection below for what `IntroGate` does beyond just showing the
+splash. The splash itself is the only exception so far to "no
+scroll-jacking, but otherwise plain document flow": a `position: fixed`
+full-viewport overlay, but it's a one-time pre-content splash, not a
+scroll mechanism, so it doesn't conflict with the rule above.
+
+**What it does:** "F" and "loe" spring in from the left/right edges of
+the screen and collide in the center to form "Floe", each tinting from
+black to a color and back in one continuous pulse timed around the
+collision — "F" to `#4781bc`, "loe" to `#99bcda`. There is no
+particle/shard burst at impact (removed — see history below) and no
+"curtain" of two solid panels physically sliding apart to reveal the
+page (also removed). The letters simply keep moving on across the
+screen past center while the solid `--arctic-bg` background layer fades
+out underneath them, revealing the real page. Don't reintroduce either
+removed mechanic without a fresh explicit ask.
+
+**Design history, in order (useful if asked to change this again):**
+1. Fade-out overlay (single panel, `AnimatePresence` exit) + an icy
+   shard/particle burst at impact.
+2. Curtain: two solid `--arctic-bg` panels, each carrying half the
+   wordmark, sliding apart to the edges, still with the shard burst —
+   explicitly requested to replace (1)'s fade because it read as
+   generic; the panel motion made the reveal itself feel like part of
+   the "ice cracking" narrative.
+3. Curtain panels removed again, back to a single fading background —
+   explicitly requested to simplify (2), keeping the letters moving
+   across the screen (inherited from (2)'s exit motion) but decoupling
+   the reveal from any solid moving panel. Also added the
+   black→color→black flash on the letters at impact (still with shards
+   at this point).
+4. The shard/particle burst removed entirely, and the black→color→black
+   flash's transition duration slowed on both the in and out legs
+   (`FLASH_TRANSITION` raised from 0.2s to 0.55s) — both explicitly
+   requested together. `FLASH_HOLD_MS`/`PART_DELAY_MS` were recomputed
+   off `FLASH_TRANSITION.duration` (rather than off shard timing, which
+   no longer existed) so the pulse fully completed before parting began.
+   At this point the flash was still a discrete `flashActive` boolean
+   toggled true/false by two separate `setTimeout`s, starting only *at*
+   the knock (`IMPACT_DELAY_MS`), not before it.
+5. Reworked into one continuous keyframed color pulse, symmetric around
+   the knock — explicitly requested ("the color starts fading... before
+   knocking", "the point where the color starts fading in should be the
+   point where the color is nearly faded out", "a continuous motion with
+   a short pause in the middle"). `flashActive` state and its two timers
+   were removed; each letter's `color` animates through a fixed
+   4-keyframe array (`[INK, FLASH_COLOR, FLASH_COLOR, INK]`) via
+   `times`/`delay`/`duration`, starting *before* the knock, reaching full
+   color right around it, holding briefly (`FLASH_HOLD_MS` = 120ms,
+   centered on the knock), then fading back out over the same duration
+   it took to fade in. At this point `PART_DELAY_MS` waited for the
+   whole pulse to finish (`FLASH_END_MS + 100`) before parting began.
+6. Current: the fade-out leg made deliberately longer than the fade-in
+   leg (`FLASH_RAMP_OUT_MS` = 400ms vs. `FLASH_RAMP_IN_MS` = 250ms —
+   no longer symmetric) and `PART_DELAY_MS` moved earlier
+   (`FLASH_PEAK_END_MS + 50`, right after the hold ends) so parting now
+   *overlaps* with the fade-out instead of waiting for it to finish —
+   both explicitly requested together ("make the color change last a
+   little longer when the letters are moving out"). Confirmed via
+   `getBoundingClientRect`/computed-color inspection that the letters
+   are well off-center while the color is still measurably mid-fade, not
+   yet back to pure ink. See the constants block above `IntroLoader`'s
+   component definition for the exact math.
+
+**Session/accessibility behavior:** plays once per browser session
+(`sessionStorage`, key `floe-intro-seen` — not `localStorage`, so it
+replays on a genuinely fresh visit later, just not on repeat
+client-side navigation back to `/` within one session) and skips
+entirely under `prefers-reduced-motion`. A tap/click anywhere on the
+overlay fast-forwards straight to fully revealed (interruptible, per
+ui-ux-pro-max's no-blocking-animation guidance).
+
+**Implementation gotchas worth knowing before touching this file:**
+- **The phase machine's very first render (`"cover"`) is a plain,
+  deterministic solid-color div, not `null`.** Returning `null` there
+  (i.e. rendering nothing until the mount effect decides something) let
+  the real page flash through underneath for a frame before JS finished
+  booting, which read as a bug, not a feature — the SSR-safe cover div
+  fixes that without introducing any hydration risk since it has zero
+  dynamic content, matching what the server rendered. (This project
+  previously also generated random shard-particle trajectories inside a
+  `useEffect` callback rather than during render, for the same
+  SSR/hydration-safety reason — the shard system itself is gone now,
+  but if any future effect needs `Math.random()`-derived render output,
+  keep it effect-scoped, never render-scoped.)
+- **React Strict Mode's dev-only double effect invocation
+  (mount→cleanup→mount) will cancel the animation on the second pass in
+  development if the play/skip decision and the `sessionStorage` write
+  aren't guarded.** The component's own effect writes
+  `sessionStorage.setItem(SEEN_KEY, "1")`; that write survives the
+  cleanup between the two Strict Mode invocations (unlike component
+  state/refs), so an unguarded second invocation would read its own
+  "seen" flag back and think it's a repeat visit, hiding the intro
+  before it plays — dev-mode only, but confirmed via direct testing.
+  Fixed with a `useRef<boolean | null>` that caches the play/skip
+  decision on the *first* invocation only; the second invocation reuses
+  the cached decision and schedules its own fresh timers (the first
+  invocation's timers get legitimately cleared by Strict Mode's
+  cleanup — that part is normal and expected).
+- **If a future version reintroduces a solid panel wrapping each
+  letter, don't also give the letter its own independent "parting"
+  animate target "to make sure it moves with the panel."** This was
+  tried during the curtain version and produces a doubling bug: a
+  letter nested inside a panel `motion.div` already inherits the
+  panel's `translateX` via ordinary CSS transform composition —
+  confirmed by direct `getBoundingClientRect`/computed-style inspection
+  (the letter's screen position tracked its panel's transform exactly,
+  1:1). Giving the letter its own equal-and-independent transform on
+  top of that made it travel twice the intended distance. In the
+  current (panel-free) version this doesn't apply — each letter owns
+  its `x` target directly since there's no panel to inherit from.
+- **The black→color→black flash is now a single constant 4-keyframe
+  array on `color` (`[INK, FLASH_COLOR, FLASH_COLOR, INK]`), not a
+  state-toggled two-step transition.** An earlier version toggled a
+  `flashActive` boolean true/false via two `setTimeout`s and switched
+  `color`'s target between two plain (non-array) values — that only
+  supported a flash that *starts* exactly at the knock, not one that
+  ramps in beforehand. The constant-keyframe version is safe here
+  specifically because the array's *values* never change across
+  re-renders (unlike an earlier documented case in this file where a
+  keyframe array's target depended on a boolean that kept changing) —
+  Framer Motion plays a keyframe array reliably as long as its resolved
+  value is stable, which this is. The keyframe `times` are derived from
+  `FLASH_START_MS`/`FLASH_PEAK_START_MS`/`FLASH_PEAK_END_MS`/
+  `FLASH_END_MS`, all computed from `IMPACT_DELAY_MS ± FLASH_RAMP_IN_MS`/
+  `FLASH_RAMP_OUT_MS`/`FLASH_HOLD_MS` — don't hardcode the `times` array
+  or the `delay`/`duration` numbers directly; if any of those constants
+  change, the pulse's in/out legs and its hold centered on the knock
+  should recompute automatically. The ramp durations are deliberately
+  *not* equal (`FLASH_RAMP_OUT_MS` > `FLASH_RAMP_IN_MS`, see design
+  history above) — don't "fix" them back to a single shared constant
+  without a fresh explicit ask. The `x`/`opacity` and `color` transitions
+  are intentionally different
+  objects on the same `animate` call (`{ ...(parting ? PART_TRANSITION :
+  CONVERGE_SPRING), color: F_COLOR_TRANSITION }`) so the color pulse
+  always runs on its own fixed timeline regardless of which position
+  transition (spring vs. tween) is active at that moment.
+- Verify any future timing change by checking `getComputedStyle(...).
+  transform`/`getBoundingClientRect()` at specific millisecond
+  checkpoints via Playwright, not just eyeballing screenshots — several
+  of the bugs above produced identical-looking screenshots whether the
+  underlying motion was correct or not, and a stale Next.js dev-server
+  bundle (test running before HMR finished recompiling a just-edited
+  file) can also produce misleading "no change" results — insert a
+  throwaway navigation/wait before timing-sensitive checks if the file
+  was just saved.
+
 ## Atmospheric video
 
 `app/components/hud/AtmosphericVideo.tsx` plays `public/floe-hero.mp4` (real

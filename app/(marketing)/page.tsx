@@ -5,6 +5,7 @@ import AtmosphericVideo from "@/app/components/hud/AtmosphericVideo";
 import VideoColorWindow from "@/app/components/hud/VideoColorWindow";
 import WaitlistForm from "@/app/components/WaitlistForm";
 import Reveal from "@/app/components/Reveal";
+import IntroGate from "@/app/components/IntroGate";
 
 const STATS = [
   { label: "Traces", value: "7" },
@@ -16,7 +17,7 @@ const STATS = [
 
 export default function LandingPage() {
   return (
-    <>
+    <IntroGate>
       {/* Hero — fills the viewport so the KPI strip doesn't peek in below
           the fold on tall/short content alike. */}
       <section
@@ -346,7 +347,7 @@ export default function LandingPage() {
 
       {/* Close — the waitlist form itself, not another link to it */}
       <WaitlistForm />
-    </>
+    </IntroGate>
   );
 }
 
