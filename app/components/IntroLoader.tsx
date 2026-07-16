@@ -15,13 +15,21 @@ const LOE_FLASH_COLOR = "#99bcda";
 // prefer physics-based curves for anything meant to feel like real
 // motion — two objects pulled together into a collision reads as
 // physical, not a UI reveal).
-const CONVERGE_SPRING = { type: "spring" as const, stiffness: 130, damping: 19, mass: 1 };
-// 0.805 = 0.7 * 1.15 — the ending (parting + background fade) slowed
-// ~15% per explicit direction, kept as an exact multiple rather than a
-// round number so a future re-request of "15% slower/faster" has a
-// clear base to multiply from.
-const PART_TRANSITION = { duration: 0.805, ease: [0.65, 0, 0.35, 1] as const }; // expo-style ease-in-out
-const IMPACT_DELAY_MS = 480; // matches when the spring visually settles at center — the "knock"
+// Stiffness/damping scaled down from an earlier {130, 19} to slow the
+// convergence itself by ~15% (not just the ending — see below) while
+// preserving the same damping ratio (for a spring, settle time scales
+// with stiffness/k^2 and damping/k for a k-times-slower feel without
+// changing how bouncy it looks): 130/1.15^2 ≈ 98 and 19/1.15 ≈ 16.5,
+// each rounded to a nearby round number.
+const CONVERGE_SPRING = { type: "spring" as const, stiffness: 100, damping: 17, mass: 1 };
+// 0.93 ≈ 0.805 * 1.15, rounded to a nice number — a second ~15%
+// slowdown stacked on the ending's earlier 0.7 -> 0.805 bump (see
+// design history in CLAUDE.md), this time requested for the whole
+// sequence rather than just the parting leg, and rounded instead of
+// kept as an exact multiple per explicit direction ("until the first
+// nice number").
+const PART_TRANSITION = { duration: 0.93, ease: [0.65, 0, 0.35, 1] as const }; // expo-style ease-in-out
+const IMPACT_DELAY_MS = 550; // 480 * 1.15 = 552, rounded to 550 — matches the slowed spring's new settle point, the "knock"
 
 // ── Color pulse — a single continuous black->color->black motion
 // centered on the knock: it starts fading in before the letters
@@ -30,15 +38,26 @@ const IMPACT_DELAY_MS = 480; // matches when the spring visually settles at cent
 // (FLASH_RAMP_OUT_MS) is deliberately longer than the fade-in leg
 // (FLASH_RAMP_IN_MS) — not symmetric — so the color is still visibly
 // draining away while the letters are moving out, rather than finishing
-// beforehand. FLASH_HOLD_MS is the brief pause at peak, centered on the
-// knock.
-const FLASH_RAMP_IN_MS = 250;
-const FLASH_RAMP_OUT_MS = 400;
-const FLASH_HOLD_MS = 120;
-const FLASH_START_MS = IMPACT_DELAY_MS - FLASH_RAMP_IN_MS - FLASH_HOLD_MS / 2; // 170 — fade-in begins
-const FLASH_PEAK_START_MS = IMPACT_DELAY_MS - FLASH_HOLD_MS / 2; // 420 — full color reached
-const FLASH_PEAK_END_MS = IMPACT_DELAY_MS + FLASH_HOLD_MS / 2; // 540 — pause ends
-const FLASH_END_MS = IMPACT_DELAY_MS + FLASH_RAMP_OUT_MS + FLASH_HOLD_MS / 2; // 940 — back to black
+// beforehand.
+// Each ~15% slower than its prior value (250/400) and rounded to a nice
+// number: 250*1.15=287.5 -> 290, 400*1.15=460 (already round).
+const FLASH_RAMP_IN_MS = 290;
+const FLASH_RAMP_OUT_MS = 460;
+// The hold at peak was a single symmetric FLASH_HOLD_MS (140, i.e. 70ms
+// each side of the knock) until this pair replaced it: the "before" half
+// (peak color reached -> knock) stays at the original 70, but the
+// "after" half (knock -> fade-out starts, i.e. when the letters are
+// moving away) is now its own ~15%-later value — 70 * 1.15 = 80.5,
+// rounded to 80 — per explicit direction that the color fade specifically
+// during the parting motion should start later, without also delaying
+// when full color is first reached (which the old symmetric HOLD_MS
+// would have done as a side effect).
+const FLASH_HOLD_BEFORE_MS = 70;
+const FLASH_HOLD_AFTER_MS = 80;
+const FLASH_START_MS = IMPACT_DELAY_MS - FLASH_RAMP_IN_MS - FLASH_HOLD_BEFORE_MS; // 190 — fade-in begins
+const FLASH_PEAK_START_MS = IMPACT_DELAY_MS - FLASH_HOLD_BEFORE_MS; // 480 — full color reached
+const FLASH_PEAK_END_MS = IMPACT_DELAY_MS + FLASH_HOLD_AFTER_MS; // 630 — pause ends, fade-out begins
+const FLASH_END_MS = IMPACT_DELAY_MS + FLASH_RAMP_OUT_MS + FLASH_HOLD_AFTER_MS; // 1090 — back to black
 const FLASH_KEYFRAME_TIMES = [
   0,
   (FLASH_PEAK_START_MS - FLASH_START_MS) / (FLASH_END_MS - FLASH_START_MS),
@@ -57,8 +76,10 @@ const LOE_COLOR_KEYFRAMES = [INK, LOE_FLASH_COLOR, LOE_FLASH_COLOR, INK];
 
 // Parting starts shortly after the hold ends — deliberately *before*
 // FLASH_END_MS, so the longer fade-out overlaps with the letters moving
-// out instead of finishing beforehand.
-const PART_DELAY_MS = FLASH_PEAK_END_MS + 50;
+// out instead of finishing beforehand. The +60 buffer (was +50, scaled
+// ~15% and rounded along with everything else) is just a small gap
+// after the hold, not part of the flash timeline itself.
+const PART_DELAY_MS = FLASH_PEAK_END_MS + 60;
 const PART_DURATION_MS = PART_TRANSITION.duration * 1000;
 
 type Phase = "cover" | "playing" | "parting" | "gone";
@@ -130,7 +151,7 @@ export default function IntroLoader({ onDone }: { onDone?: () => void }) {
 
     setPhase("playing");
     const partTimer = setTimeout(() => setPhase("parting"), PART_DELAY_MS);
-    const goneTimer = setTimeout(() => setPhase("gone"), PART_DELAY_MS + PART_DURATION_MS + 50);
+    const goneTimer = setTimeout(() => setPhase("gone"), PART_DELAY_MS + PART_DURATION_MS + 60);
 
     return () => {
       clearTimeout(partTimer);

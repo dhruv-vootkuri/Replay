@@ -23,11 +23,40 @@ import IntroLoader from "./IntroLoader";
 // it does mean the page's real content isn't present until JS runs and
 // the gate opens. If that regresses SEO/no-JS behavior more than
 // expected, that's the tradeoff to revisit, not this gating mechanism.
+// Same file AtmosphericVideo/VideoColorWindow default to — kept as a
+// literal here (not a shared constant) matching how those components
+// already hardcode their own default, per repo convention of inline
+// values over cross-file constants for a single string.
+const HERO_VIDEO_SRC = "/floe-hero.mp4";
+
 export default function IntroGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   return (
     <>
+      {/* Warms the browser's cache for the hero video while the intro
+          plays, so the real <video> layers (AtmosphericVideo,
+          VideoColorWindow — both point at this same file) can start
+          playback the instant they mount instead of stalling on a cold
+          fetch right as the headline text appears, which read as an
+          awkward gap between text and video. Never played, never visible
+          — `preload="auto"` alone is enough to trigger the fetch; it's
+          kept in normal layout (not display:none) with 1x1 size and zero
+          opacity because some browsers deprioritize loading on
+          display:none media. This does mean a network request for the
+          video now starts before the intro overlay is gone, a narrow,
+          deliberate exception to "no network requests fire while the
+          intro is covering the screen" — the video itself still isn't
+          visible or playing until the real page mounts, only its bytes
+          are fetched early. */}
+      <video
+        src={HERO_VIDEO_SRC}
+        preload="auto"
+        muted
+        playsInline
+        aria-hidden="true"
+        style={{ position: "fixed", top: 0, left: 0, width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+      />
       <IntroLoader onDone={() => setReady(true)} />
       {ready ? children : null}
     </>

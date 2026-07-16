@@ -533,16 +533,45 @@ removed mechanic without a fresh explicit ask.
    centered on the knock), then fading back out over the same duration
    it took to fade in. At this point `PART_DELAY_MS` waited for the
    whole pulse to finish (`FLASH_END_MS + 100`) before parting began.
-6. Current: the fade-out leg made deliberately longer than the fade-in
-   leg (`FLASH_RAMP_OUT_MS` = 400ms vs. `FLASH_RAMP_IN_MS` = 250ms —
-   no longer symmetric) and `PART_DELAY_MS` moved earlier
+6. The fade-out leg made deliberately longer than the fade-in leg
+   (`FLASH_RAMP_OUT_MS` = 400ms vs. `FLASH_RAMP_IN_MS` = 250ms — no
+   longer symmetric) and `PART_DELAY_MS` moved earlier
    (`FLASH_PEAK_END_MS + 50`, right after the hold ends) so parting now
    *overlaps* with the fade-out instead of waiting for it to finish —
    both explicitly requested together ("make the color change last a
    little longer when the letters are moving out"). Confirmed via
    `getBoundingClientRect`/computed-color inspection that the letters
    are well off-center while the color is still measurably mid-fade, not
-   yet back to pure ink. See the constants block above `IntroLoader`'s
+   yet back to pure ink.
+7. The whole sequence slowed ~15% — explicitly requested as "the
+   animation when the page is loaded ~15% slower, until the first nice
+   number," i.e. scale-then-round rather than keep an exact multiplier
+   (contrast with step 6's own earlier `0.7 -> 0.805` bump, which *was*
+   kept exact). `CONVERGE_SPRING`'s stiffness/damping went from
+   `{130, 19}` to `{100, 17}` (scaled as stiffness/k², damping/k for
+   k=1.15 to slow the spring's settle time without changing its
+   bounciness, confirmed via `getBoundingClientRect` checkpoints that the
+   letters now settle around 500-550ms instead of ~480ms).
+   `IMPACT_DELAY_MS` 480→550, `FLASH_RAMP_IN_MS` 250→290,
+   `FLASH_RAMP_OUT_MS` 400→460, `PART_TRANSITION.duration` 0.805→0.93s.
+   The then-symmetric `FLASH_HOLD_MS` (120→140) scaled the same way at
+   this point, before step 8 split it.
+8. Current: the color fade's *start* (not its length) pushed later
+   specifically during the parting/moving-away leg — explicitly
+   requested ("when they're moving away, make the color fade like 15%
+   later, until the next nice number"). This retired the single
+   symmetric `FLASH_HOLD_MS` from step 7 in favor of two independent
+   halves: `FLASH_HOLD_BEFORE_MS` (peak color reached → knock, held at
+   70ms, unchanged) and `FLASH_HOLD_AFTER_MS` (knock → fade-out begins,
+   70 × 1.15 ≈ 80.5, rounded to 80). Splitting them was necessary because
+   the old symmetric `HOLD_MS` controlled *both* halves together — moving
+   it would have also delayed when full color is first reached, which
+   wasn't asked for and wasn't wanted. Confirmed via computed-color
+   sampling that peak color (`rgb(71,129,188)`) now holds flat through
+   630ms (`FLASH_PEAK_END_MS`) before any fade begins, while the letters'
+   `x` position stays fixed until ~650-700ms (`PART_DELAY_MS` = 690) —
+   i.e. the fade now visibly starts right as parting begins, not
+   ~60ms before it. See the constants block above `IntroLoader`'s
    component definition for the exact math.
 
 **Session/accessibility behavior:** plays once per browser session
@@ -606,10 +635,11 @@ ui-ux-pro-max's no-blocking-animation guidance).
   value is stable, which this is. The keyframe `times` are derived from
   `FLASH_START_MS`/`FLASH_PEAK_START_MS`/`FLASH_PEAK_END_MS`/
   `FLASH_END_MS`, all computed from `IMPACT_DELAY_MS ± FLASH_RAMP_IN_MS`/
-  `FLASH_RAMP_OUT_MS`/`FLASH_HOLD_MS` — don't hardcode the `times` array
-  or the `delay`/`duration` numbers directly; if any of those constants
-  change, the pulse's in/out legs and its hold centered on the knock
-  should recompute automatically. The ramp durations are deliberately
+  `FLASH_RAMP_OUT_MS`/`FLASH_HOLD_BEFORE_MS`/`FLASH_HOLD_AFTER_MS` — don't
+  hardcode the `times` array or the `delay`/`duration` numbers directly;
+  if any of those constants change, the pulse's in/out legs and its hold
+  (now asymmetric around the knock — see design history step 8) should
+  recompute automatically. The ramp durations are deliberately
   *not* equal (`FLASH_RAMP_OUT_MS` > `FLASH_RAMP_IN_MS`, see design
   history above) — don't "fix" them back to a single shared constant
   without a fresh explicit ask. The `x`/`opacity` and `color` transitions
