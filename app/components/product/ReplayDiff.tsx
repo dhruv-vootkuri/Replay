@@ -8,7 +8,7 @@ import WindowChrome from "./WindowChrome";
 type SpanStatus = "cached" | "forked" | "downstream";
 
 const STATUS_META: Record<SpanStatus, { label: string; color: string }> = {
-  cached: { label: "CACHED", color: "#8B95A3" },
+  cached: { label: "CACHED", color: "#8B95A3" },  
   forked: { label: "FORKED", color: "#F59E0B" },
   downstream: { label: "DOWNSTREAM", color: "#38BDF8" },
 };

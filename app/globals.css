@@ -172,7 +172,13 @@ body {
      over the AtmosphericVideo sections). This shadow is contained instead. */
   .header-panel {
     background: var(--arctic-bg);
-    border-top: 1px solid rgba(255, 255, 255, 0.9);
+    /* border-top used to be near-white (rgba(255,255,255,0.9) on a white
+       bg is effectively invisible), so the pill's top edge blended into
+       whatever section content scrolled underneath it — only the bottom
+       edge (frost-tinted) actually read as a border. Matched to the same
+       visible frost tint as border-bottom so the panel is legible on
+       both edges, not just the bottom. */
+    border-top: 1px solid rgba(150, 190, 220, 0.35);
     border-left: 1px solid rgba(232, 245, 251, 0.8);
     border-right: 1px solid rgba(150, 190, 220, 0.35);
     border-bottom: 1px solid rgba(150, 190, 220, 0.35);
@@ -200,6 +206,24 @@ body {
   .frost-hover:hover {
     border-color: rgba(95, 168, 211, 0.55);
     box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Depth-on-hover for the Traces/Replays chapter Callout blocks — a
+     subtle lift (tinted background + slight rise) as an interaction cue
+     only, not a resting card/shadow (that would reintroduce the generic
+     icon-feature-grid look this page deliberately avoids — see CLAUDE.md's
+     "Why this shape"). The tint uses each Callout's own semantic color
+     (passed in via --callout-tint, already alpha-suffixed like the real-UI
+     components' badge tints) rather than the frost-blue accent, so hovering
+     a callout doesn't wash out its category color. Pure CSS (no JS state)
+     so Callout can stay a plain function inside the server-rendered
+     page.tsx instead of forcing a "use client" boundary. */
+  .callout-lift {
+    transition: background 0.25s ease, transform 0.25s ease;
+  }
+  .callout-lift:hover {
+    background: var(--callout-tint);
+    transform: translateY(-2px);
   }
 
   /* Restrained topographic contour texture — hero backdrops only, not tiled
@@ -291,6 +315,23 @@ body {
     opacity: 1;
   }
 
+  /* History: ReplayDiff (the hero-adjacent trace block, stretched to an
+     exact pixel height by a CSS Grid parent — see the two-column KPI
+     section in page.tsx) briefly had its hover scale disabled via a
+     `.no-hover-scale` modifier class, because the 1.015x transform
+     combined with the ::before gradient-ring mask produced a hairline
+     sub-pixel seam at the edges (confirmed via boundingBox() sampling at
+     the time: 888x600 -> 901.32x609, non-integer). That symptom didn't
+     reproduce after later layout changes in the same section (switching
+     the column wrappers from a hard `height: 600` to `minHeight: 600`,
+     among other tweaks) — reconfirmed clean via the same boundingBox()
+     + zoomed-corner-screenshot method before removing `.no-hover-scale`
+     and its rule here, restoring the shared hover-scale treatment so
+     ReplayDiff matches Waterfall/LogStream/CommandLog/InstallCommand
+     again. If a similar seam ever reappears, check whether something is
+     back to forcing this block's dimensions to non-integer pixel values
+     before assuming the mask/transform combo itself is at fault. */
+
 /* ─── Dashboard utilities ──────────────────────────────────────────── */
 .dash-scroll {
   scrollbar-width: thin;
@@ -322,7 +363,63 @@ body {
 }
 .dash-fade-in { animation: dash-fade-in 0.4s ease-out both; }
 
+/* Hero headline's InputCycler ("one input" -> "two inputs" -> "many
+   inputs") typewriter cursor — a blinking border-right on the text itself
+   rather than a separate "|" character, so it costs ~2px, not a full
+   monospace character's width, and can sit flush after the last letter
+   even when the text fills the box's exact-fit width ("many inputs").
+   Hard on/off toggle (not a smooth fade), since a real terminal caret
+   blinks rather than pulses. */
+@keyframes typewriter-blink {
+  0%, 49% { border-color: var(--ink); }
+  50%, 100% { border-color: transparent; }
+}
+.typewriter-cursor {
+  border-right: 2px solid var(--ink);
+  padding-right: 2px;
+  animation: typewriter-blink 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none;
+    border-color: transparent;
+  }
+}
+
 .tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* "Floe" hover — "F" and "loe" fade to the exact same two colors
+   IntroLoader's one-time splash flashes them to (F_FLASH_COLOR/
+   LOE_FLASH_COLOR in IntroLoader.tsx: #4781bc / #99bcda), so hovering
+   either instance of the wordmark reads as a deliberate callback to "the
+   very first animation" a visitor sees, not an arbitrary new blue. Two
+   trigger points share these classes: the header wordmark
+   (.wordmark-link, an actual <Link>) and the hero's "Fine-Tune Agents to
+   Floe" headline (.hero-floe-hover, a plain non-interactive <span> — just
+   a hover target, not a link). Resting color is plain --ink (set on each
+   parent element, not here) — this is a hover-only exception to
+   "frost-blue never in body text," not a change to that rule, since it's
+   inert until hovered and fades right back. Symmetric transition timing
+   handles both the fade-in (hover) and fade-out (un-hover) with one
+   rule. */
+.wordmark-f,
+.wordmark-loe {
+  transition: color 0.35s ease;
+}
+.wordmark-link:hover .wordmark-f,
+.hero-floe-hover:hover .wordmark-f {
+  color: #4781bc;
+}
+.wordmark-link:hover .wordmark-loe,
+.hero-floe-hover:hover .wordmark-loe {
+  color: #99bcda;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-f,
+  .wordmark-loe {
+    transition: none;
+  }
+}
 
 /* ── HUD scan-line — shared by every trace-console section ── */
 .hud-scanline {

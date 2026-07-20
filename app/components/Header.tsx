@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const NAV_LINKS: { label: string; href: string; id: string }[] = [
+  { label: "Install", href: "/#install", id: "install" },
   { label: "Traces", href: "/#traces", id: "traces" },
   { label: "Replays", href: "/#replays", id: "replays" },
 ];
@@ -97,9 +98,17 @@ export default function Header() {
           borderRadius: 999,
         }}
       >
-        {/* Wordmark */}
+        {/* Wordmark — "F"/"loe" split into two spans with a hover-only
+            color fade (see .wordmark-f/.wordmark-loe in globals.css)
+            matching IntroLoader's F_FLASH_COLOR/LOE_FLASH_COLOR exactly,
+            so hovering the wordmark reads as a callback to "the very
+            first animation" a visitor sees. Resting color stays plain
+            --ink per the sitewide rule (frost-blue only on hover/active/
+            focus) — this isn't a static blue wordmark, just a hover
+            easter egg referencing the intro. */}
         <Link
           href="/"
+          className="wordmark-link"
           style={{
             display: "flex",
             alignItems: "center",
@@ -119,18 +128,23 @@ export default function Header() {
               letterSpacing: "-0.01em",
             }}
           >
-            Floe
+            <span className="wordmark-f">F</span><span className="wordmark-loe">loe</span>
           </span>
         </Link>
 
         {/* Rendered via a CSS breakpoint (not the isMobile JS flag) so
             there's no hydration flash and, more importantly, no state
             where the nav has already vanished but the hamburger hasn't
-            mounted yet — Traces/Replays/Console must always be reachable
-            one way or the other. */}
+            mounted yet — Install/Traces/Replays must always be reachable
+            one way or the other. Console was removed outright (not just
+            hidden) — with it gone, justifyContent:"center" alone
+            recenters the remaining three within this flex:1 area, no
+            extra centering logic needed. gap bumped up further now that
+            it's only three items, not four, so they don't read as
+            huddled in the middle of the freed-up space. */}
         <nav
           className="hidden sm:flex"
-          style={{ alignItems: "center", flex: 1, justifyContent: "center", gap: 40, marginLeft: 48, marginRight: 32 }}
+          style={{ alignItems: "center", flex: 1, justifyContent: "center", gap: 56, marginLeft: 48, marginRight: 32 }}
         >
             {NAV_LINKS.map((link) => {
               const active = pathname === "/" && activeId === link.id;
@@ -166,33 +180,6 @@ export default function Header() {
                 </Link>
               );
             })}
-
-            <a
-              href="/dashboard"
-              style={{
-                textDecoration: "none",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.875rem",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--ink)",
-                opacity: 0.85,
-                whiteSpace: "nowrap",
-                transition: "opacity 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.opacity = "1";
-                el.style.color = "var(--frost-700)";
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.opacity = "0.85";
-                el.style.color = "var(--ink)";
-              }}
-            >
-              Console
-            </a>
         </nav>
 
         {/* Hamburger — only ever shown below the breakpoint where the
@@ -290,21 +277,6 @@ export default function Header() {
               </Link>
             );
           })}
-          <a
-            href="/dashboard"
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.875rem",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--ink)",
-              textDecoration: "none",
-              padding: "12px 16px",
-              borderRadius: 12,
-            }}
-          >
-            Console
-          </a>
         </nav>
       )}
     </header>

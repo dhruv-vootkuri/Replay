@@ -466,6 +466,95 @@ real screenshot, a real field name, or a real file on `main`, don't add it.
 
 ---
 
+## Typography/depth/content refresh pass
+
+Per explicit direction ("make sure things pop" + ground content in what's
+actually on `main`), a pass that touched typography scale, a depth
+technique, one new real-UI block, and a small content addition — all
+while keeping the arctic monochrome palette's hover-only frost-blue rule
+and every existing animation/transition untouched (no new motion, only
+bigger/bolder statics).
+
+- **Typography scale bumped** (Space Grotesk, weight 700→800 at the
+  biggest sizes): hero `h1` `clamp(2.25rem,5.5vw,4.25rem)` →
+  `clamp(2.75rem,7vw,5.5rem)`; `#traces`/`#replays` `h2`
+  `clamp(2rem,4.5vw,3.25rem)` → `clamp(2.25rem,5.5vw,4rem)`; the two
+  chapter-closing transition lines ("Now pick a forkable span...", "This
+  is what changes...") `clamp(1.125rem,1.8vw,1.5rem)` weight 600 →
+  `clamp(1.25rem,2.2vw,1.75rem)` weight 700; `LegalDoc.tsx`'s `h1`
+  `clamp(2rem,4vw,2.75rem)` weight 700 → `clamp(2.25rem,4.5vw,3.25rem)`
+  weight 800 (legal pages otherwise untouched — plain readable typography
+  is still the right call there, see the Site Structure section above).
+  Mono eyebrow labels ("01 — Traces") and body copy were deliberately
+  **not** touched — they're the quiet counterpoint that makes the bigger
+  headlines read as an intentional scale jump rather than just "bigger
+  everything."
+- **KPI strip repositioned from a full-width row below the trace visual
+  to a `.frost-panel` aside beside it** — explicit direction ("rather
+  than putting it at the bottom... right of the trace in a crafted box").
+  The combined ReplayDiff+KPI section (previously the diff stacked over a
+  five-item flex row) is now a two-column flex row: `ReplayDiff` at
+  `flex: "62 1 560px"`, a `.frost-panel` aside at `flex: "34 1 300px"`
+  (capped `maxWidth: 400`) containing the five stats stacked vertically
+  inside a `repeat(auto-fit, minmax(220px, 1fr))` grid, with the "from a
+  real recorded session" caption moved inside the same box below a
+  hairline. No media query — `flexWrap` drops the aside below the diff
+  once the row can't fit both basis widths, and the same grid threshold
+  happens to also render as a single column on mobile (the aside's
+  available width and the mobile full-width content width turned out to
+  land in the same ~280-340px range in practice, so one `minmax` value
+  serves both cases — don't assume a wider mobile grid is needed here).
+  This is a deliberate change from the original "real Overview numbers
+  immediately after the hero, no divider" credibility-strip framing (see
+  "Why this shape" above) — the *no-divider-between-diff-and-numbers*
+  rule is superseded for this specific pair (they're now beside each
+  other, not stacked, so there's no boundary to have or not have a
+  divider on), but the underlying reasoning (numbers are real, not
+  decoration) still applies and the numbers themselves didn't change.
+  KPI number size grew accordingly for the narrower column:
+  `clamp(1.5rem,3vw,2.25rem)` weight 700 → `clamp(1.75rem,3.5vw,2.75rem)`
+  weight 800.
+- **New real-UI block**: `app/components/product/CommandLog.tsx`, a
+  terminal-styled `$`-prompt block (same `.arctic-code-block` +
+  `WindowChrome` pattern as `Waterfall`/`ReplayDiff`/`LogStream`) showing
+  the actual `replay fork <trace_id> <span_id> --set attr=value`/
+  `replay diff <replay_id>`/`replay explore <trace_id>` command syntax
+  from `replay/cli.py` on `main`, applied to the *same* Zorblax→Paris
+  example `ReplayDiff` already shows above it in `#replays` — not a new
+  scenario (see the "don't fabricate a second visual example" rule
+  above). IDs (`bf35b08`, `4a91f2c`, `21b5a25`) are illustrative
+  short-hash-shaped strings, not real internal data. Placed right after
+  the Cached/Forked/Downstream callout grid, under a
+  "The real command behind it" mono label matching the existing
+  "And every step is logged live" pattern before `LogStream`.
+- **Content**: the "What about side effects?" paragraph in `#replays` now
+  also names `replay explore` as the interactive way to hit the same
+  pause/run/skip flow — that TUI was already covered conceptually
+  elsewhere in this doc but was never named on the page itself.
+- **Depth technique — no shadows, no resting cards** (per "Why this
+  shape"'s explicit anti-feature-grid stance, re-confirmed rather than
+  relaxed for this pass): the `Callout` blocks (Kind badges/◆
+  marker/Depth, Cached/Forked/Downstream) get a `.callout-lift` hover
+  state — a soft background tint in the callout's *own* semantic color
+  (`${hexColor}1A`, matching the same alpha-suffix tint the real-UI
+  components' badges already use, passed in via an inline
+  `--callout-tint` custom property since colors vary per instance) plus a
+  `translateY(-2px)` rise, defined in `globals.css` and applied only via
+  `:hover` — resting state is unchanged flat text, so this reads as an
+  interaction cue, not a permanent card. Deliberately *not* built as
+  React state + `onMouseEnter`/`onMouseLeave` (which would force
+  `Callout`, and therefore all of `page.tsx`, into `"use client"`) —
+  pure CSS custom property + `:hover` keeps `page.tsx` a Server
+  Component. Each chapter's eyebrow label ("01 — Traces", "02 — Replays")
+  also gained a small 2px×14px solid `var(--ink)` tick mark beside it —
+  a decisive per-chapter anchor mark, not a heavier hairline (the
+  single-hairline-per-section-boundary rule from "Why this shape" is
+  untouched).
+- No new npm dependencies were needed — `lucide-react`, Framer Motion,
+  and Tailwind v4 already covered everything here.
+
+---
+
 ## Page Structure
 
 Each page is normal document flow — no `position: fixed` section pinning,

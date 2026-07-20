@@ -37,11 +37,11 @@ export default function LegalDoc({ title, updated, sections }: LegalDocProps) {
         <h1
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: "clamp(2rem, 4vw, 2.75rem)",
-            fontWeight: 700,
+            fontSize: "clamp(2.25rem, 4.5vw, 3.25rem)",
+            fontWeight: 800,
             color: "var(--ink)",
             marginBottom: 12,
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.02em",
           }}
         >
           {title}

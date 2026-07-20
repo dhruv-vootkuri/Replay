@@ -1,5 +1,8 @@
 interface WindowChromeProps {
   title?: string;
+  // Replaces the centered title with arbitrary content (e.g. InstallCommand's
+  // macOS/Windows toggle) — takes priority over `title` when both are passed.
+  center?: React.ReactNode;
 }
 
 // macOS-style window chrome — traffic-light dots (single element, drawn via
@@ -9,7 +12,7 @@ interface WindowChromeProps {
 // dark cards. Sits above the block's own padded content, inside the same
 // .arctic-code-block wrapper — doesn't affect its hover glow, which is
 // keyed off the outer element regardless of what's inside it.
-export default function WindowChrome({ title }: WindowChromeProps) {
+export default function WindowChrome({ title, center }: WindowChromeProps) {
   return (
     <div
       style={{
@@ -34,22 +37,26 @@ export default function WindowChrome({ title }: WindowChromeProps) {
           flexShrink: 0,
         }}
       />
-      {title && (
-        <span
-          style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.8125rem",
-            fontWeight: 600,
-            letterSpacing: "0.06em",
-            color: "#D4D4D4",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {title}
-        </span>
+      {center ? (
+        <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)" }}>{center}</div>
+      ) : (
+        title && (
+          <span
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              color: "#D4D4D4",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {title}
+          </span>
+        )
       )}
     </div>
   );
