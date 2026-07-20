@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "filippo-skills": {
+      "source": {
+        "source": "github",
+        "repo": "filippolmt/skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ui-ux-pro-max@filippo-skills": true
+  }
+}

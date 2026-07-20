@@ -1,0 +1,194 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  match: (p: string) => boolean;
+}
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
+
+const NAV: NavItem[] = [
+  {
+    href: "/dashboard",
+    label: "Overview",
+    match: (p) => p === "/dashboard",
+    icon: <Icon d="M3 12l9-9 9 9M5 10v10h14V10" />,
+  },
+  {
+    href: "/dashboard/traces",
+    label: "Traces",
+    match: (p) => p.startsWith("/dashboard/traces"),
+    icon: <Icon d="M4 6h16M4 12h16M4 18h10" />,
+  },
+  {
+    href: "/dashboard/replays",
+    label: "Replays",
+    match: (p) => p.startsWith("/dashboard/replays"),
+    icon: <Icon d="M3 12a9 9 0 109-9 9 9 0 00-9 9zm0 0l3-3m-3 3l3 3M12 7v5l3 2" />,
+  },
+  {
+    href: "/dashboard/logs",
+    label: "Logs",
+    match: (p) => p.startsWith("/dashboard/logs"),
+    icon: <Icon d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5" />,
+  },
+];
+
+function Brand() {
+  return (
+    <Link href="/dashboard" className="flex items-center gap-3 px-6 py-5">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/floe-header-icon.png" alt="" width={28} height={28} aria-hidden="true" style={{ display: "block", height: 28, width: "auto" }} />
+      <div className="leading-tight">
+        <div className="font-[family-name:var(--font-display)] text-[17px] font-semibold text-starlight">
+          Floe
+        </div>
+        <div className="font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.18em] text-dim-starlight/60">
+          replay console
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
+  return (
+    <nav className="mt-2 flex flex-1 flex-col gap-1 px-3">
+      {NAV.map((item) => {
+        const active = item.match(pathname);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onNavigate}
+            className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              active
+                ? "bg-signal/10 text-starlight"
+                : "text-dim-starlight hover:bg-black/[0.04] hover:text-starlight"
+            }`}
+          >
+            {active && (
+              <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-signal" />
+            )}
+            <span className={active ? "text-signal" : "text-dim-starlight/70 group-hover:text-dim-starlight"}>
+              {item.icon}
+            </span>
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function StatusFooter() {
+  return (
+    <div className="border-t border-black/[0.08] px-5 py-4">
+      <div className="flex items-center gap-2 text-xs text-dim-starlight">
+        <span className="dash-live-dot h-2 w-2 rounded-full bg-pulse" />
+        Tracer connected
+      </div>
+      <div className="mt-1 font-[family-name:var(--font-mono)] text-[10px] text-dim-starlight/50">
+        traces/ · local sink
+      </div>
+      <Link
+        href="/"
+        className="mt-3 inline-flex items-center gap-1 text-[11px] text-dim-starlight/60 transition-colors hover:text-signal"
+      >
+        ← Back to site
+      </Link>
+    </div>
+  );
+}
+
+export default function Sidebar() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  // Close the drawer whenever the route changes (link click already closes
+  // it via onNavigate, but this also covers back/forward navigation).
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  return (
+    <>
+      {/* Mobile top bar — replaces the fixed 236px sidebar below md, which
+          otherwise ate ~60% of a phone viewport and clipped every page's
+          content off-screen. */}
+      <div className="flex items-center justify-between border-b border-black/[0.08] bg-[#EEF2F6] px-4 py-3 md:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/floe-header-icon.png" alt="" width={22} height={22} aria-hidden="true" style={{ display: "block", height: 22, width: "auto" }} />
+          <span className="font-[family-name:var(--font-display)] text-[15px] font-semibold text-starlight">
+            Floe
+          </span>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open navigation"
+          aria-expanded={open}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-black/[0.06] hover:text-starlight"
+        >
+          <Icon d="M4 6h16M4 12h16M4 18h16" />
+        </button>
+      </div>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden w-[236px] flex-shrink-0 flex-col border-r border-black/[0.08] bg-[#EEF2F6] md:flex">
+        <Brand />
+        <NavList pathname={pathname} />
+        <StatusFooter />
+      </aside>
+
+      {/* Mobile drawer */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="absolute left-0 top-0 flex h-full w-[260px] max-w-[80vw] flex-col bg-[#EEF2F6]">
+            <div className="flex items-center justify-between">
+              <Brand />
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close navigation"
+                className="mr-4 flex h-9 w-9 items-center justify-center rounded-lg text-dim-starlight transition-colors hover:bg-black/[0.06] hover:text-starlight"
+              >
+                <Icon d="M6 6l12 12M18 6L6 18" />
+              </button>
+            </div>
+            <NavList pathname={pathname} onNavigate={() => setOpen(false)} />
+            <StatusFooter />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

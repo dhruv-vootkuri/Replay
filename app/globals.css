@@ -1,22 +1,25 @@
-@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap");
 @import "tailwindcss";
 
 @theme inline {
-  /* ─── Core palette ─────────────────────────────── */
-  --color-deep-space:     #080C14;
-  --color-surface:        #0F172A;
-  --color-starlight:      #F1F5F9;
-  --color-dim-starlight:  #94A3B8;
-  --color-signal:         #38BDF8;
+  /* ─── Core palette — monochrome, matches the marketing site's arctic
+     palette (--arctic-bg/--ink/--slate/--frost-700 below) so the console
+     reads as the same product rather than a separate dark surface. ── */
+  --color-deep-space:     #FFFFFF;
+  --color-surface:        #EEF2F6;
+  --color-starlight:      #0B0E14;
+  --color-dim-starlight:  #48505C;
+  --color-signal:         #1F4E6B;
 
-  /* ─── Per-tab accents ──────────────────────────── */
-  --color-anomaly:        #F59E0B;
-  --color-divergence:     #F43F5E;
-  --color-boundary:       #818CF8;
-  --color-pulse:          #34D399;
+  /* ─── Per-tab accents — flattened to ink; tabs are
+     differentiated by constellation shape + label, not hue ── */
+  --color-anomaly:        #0B0E14;
+  --color-divergence:     #0B0E14;
+  --color-boundary:       #0B0E14;
+  --color-pulse:          #0B0E14;
 
   /* ─── Typography ───────────────────────────────── */
-  --font-display: "Syne", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body:    "Outfit", system-ui, sans-serif;
   --font-mono:    "Space Mono", "Fira Code", monospace;
 
@@ -62,25 +65,395 @@
   --radius-full: 9999px;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Reset lives in @layer base so Tailwind utilities (later layer) still win.
+   If unlayered, padding/margin zeroing would override every spacing utility. */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* ── Arctic palette — marketing site only ──────────────────────────────
+   Plain custom properties (not Tailwind @theme tokens) referenced via
+   var() from inline styles across app/(marketing)/** and Header/Footer.
+   Deliberately separate from the --color-deep-space/--color-starlight
+   family above, which app/dashboard/** still consumes at their old dark
+   values via Tailwind classes — see CLAUDE.md "Color Palette" section for
+   why those two systems are intentionally not unified. */
+:root {
+  /* Flat white background — no blue cast, no gradient */
+  --arctic-bg:      #FFFFFF;
+  --arctic-bg-2:    #FFFFFF;
+  --arctic-surface: #EEF2F6; /* card/input fills */
+
+  /* Charcoal-navy ink, not warm/neutral black */
+  --ink:      #0B0E14;
+  --ink-soft: rgba(11, 14, 20, 0.85);
+
+  /* Cool slate text */
+  --slate:      #48505C;
+  --slate-dim:  #6B7480;
+  --hairline:   #DCE3EA;
+
+  /* Frost accent — hover/active/focus only, never body text or a fill */
+  --frost-100: #EAF3FA;
+  --frost-300: #BEDCEF;
+  --frost-500: #5FA8D3;
+  --frost-700: #2E6E96;
+
+  /* Diffused, blue-gray shadows — light off snow, not a hard drop shadow.
+     --shadow-depth layers a soft far shadow under a tighter near shadow so
+     glass surfaces read as stacked ice sheets rather than flat rectangles. */
+  --shadow-sm:    0 2px 10px -3px rgba(70, 100, 130, 0.12);
+  --shadow-md:    0 16px 40px -14px rgba(60, 90, 120, 0.20);
+  --shadow-depth: 0 1px 3px -1px rgba(60, 90, 120, 0.10), 0 20px 44px -18px rgba(60, 90, 120, 0.22);
+  --glow-frost:   0 0 0 3px rgba(95, 168, 211, 0.22);
 }
 
 html {
-  background-color: #080C14;
-  color: #94A3B8;
+  background-color: var(--arctic-bg);
+  color: var(--slate);
   font-family: "Outfit", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Soft snap for section landings; no snap inside Features tabs */
-  scroll-snap-type: y proximity;
+  /* Traces/Replays are now in-page anchors on Landing, not separate routes */
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
 body {
-  background-color: #080C14;
-  color: #94A3B8;
+  color: var(--slate);
+  background-color: var(--arctic-bg);
+  /* Faint neutral grain over flat white — inline SVG feTurbulence noise,
+     low alpha, no color tint. No gradient, no drift — flat white per
+     explicit design call (was a cooling blue radial wash before). */
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='matrix' values='0 0 0 0 0.6  0 0 0 0 0.6  0 0 0 0 0.6  0 0 0 0.05 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-blend-mode: overlay;
+}
+
+/* NOTE: Tailwind v4 (Turbopack build observed) hoists rules out of a
+   manually-authored `@layer components { }` block into unlayered CSS
+   regardless — so layering doesn't reliably let hover:/focus: utilities
+   win here. Any hover state on a .frost-panel element is instead written
+   as its own plain-CSS :hover rule below (e.g. .frost-hover), not as a
+   Tailwind arbitrary-value utility — that combination silently no-ops. */
+
+  /* Frosted-glass surface — floating header, cards, form fields. Stronger
+     blur+saturate than a plain translucency, a crisp top-edge light-catch
+     (inset highlight), and a top-left/bottom-right bevel (brighter/dimmer
+     border sides) so it reads as an ice-edge catching light, not a flat
+     rectangle with a uniform border. */
+  .frost-panel {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, 0.65);
+    border-left: 1px solid rgba(232, 245, 251, 0.5);
+    border-right: 1px solid rgba(150, 190, 220, 0.28);
+    border-bottom: 1px solid rgba(150, 190, 220, 0.28);
+    box-shadow: var(--shadow-depth), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Fully opaque counterpart to .frost-panel — the fixed header needs to
+     stay legible over any section (hero topo texture, product-UI screens,
+     video atmosphere) it happens to float over, so it skips the
+     translucency/blur but keeps the same ice-edge bevel + a tighter shadow.
+     Deliberately NOT var(--shadow-depth) — that far-shadow layer's blur
+     radius exceeds its own offset, so it bleeds ~15-20px above the pill's
+     own top edge into a visible gray band across the full viewport width
+     wherever the header floats over something with contrast (most visible
+     over the AtmosphericVideo sections). This shadow is contained instead. */
+  .header-panel {
+    background: var(--arctic-bg);
+    /* border-top used to be near-white (rgba(255,255,255,0.9) on a white
+       bg is effectively invisible), so the pill's top edge blended into
+       whatever section content scrolled underneath it — only the bottom
+       edge (frost-tinted) actually read as a border. Matched to the same
+       visible frost tint as border-bottom so the panel is legible on
+       both edges, not just the bottom. */
+    border-top: 1px solid rgba(150, 190, 220, 0.35);
+    border-left: 1px solid rgba(232, 245, 251, 0.8);
+    border-right: 1px solid rgba(150, 190, 220, 0.35);
+    border-bottom: 1px solid rgba(150, 190, 220, 0.35);
+    box-shadow: 0 1px 3px -1px rgba(60, 90, 120, 0.10), 0 6px 14px -8px rgba(60, 90, 120, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Sitewide keyboard-focus ring — frost-700 (not frost-500) because it's
+     the only frost step that clears 3:1 non-text contrast against both the
+     light arctic-bg (5.29:1) and the dashboard's near-black surfaces
+     (3.40:1); frost-500 reads great on dark but fails on light (2.50:1).
+     Previously there was no :focus-visible rule at all sitewide — every
+     interactive element fell back to the plain browser-default outline. */
+  *:focus-visible {
+    outline: 2px solid var(--frost-700);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Opt-in hover intensification for .frost-panel elements that should
+     react (e.g. the landing page's two-path cards) — the header uses
+     .frost-panel alone and stays static. */
+  .frost-hover {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .frost-hover:hover {
+    border-color: rgba(95, 168, 211, 0.55);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Depth-on-hover for the Traces/Replays chapter Callout blocks — a
+     subtle lift (tinted background + slight rise) as an interaction cue
+     only, not a resting card/shadow (that would reintroduce the generic
+     icon-feature-grid look this page deliberately avoids — see CLAUDE.md's
+     "Why this shape"). The tint uses each Callout's own semantic color
+     (passed in via --callout-tint, already alpha-suffixed like the real-UI
+     components' badge tints) rather than the frost-blue accent, so hovering
+     a callout doesn't wash out its category color. Pure CSS (no JS state)
+     so Callout can stay a plain function inside the server-rendered
+     page.tsx instead of forcing a "use client" boundary. */
+  .callout-lift {
+    transition: background 0.25s ease, transform 0.25s ease;
+  }
+  .callout-lift:hover {
+    background: var(--callout-tint);
+    transform: translateY(-2px);
+  }
+
+  /* Restrained topographic contour texture — hero backdrops only, not tiled
+     sitewide. Hand-authored wavy contour lines, cold and geometric rather
+     than illustrative (avoids reading as literal mountains/snowflakes). */
+  .arctic-topo {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><g fill='none' stroke='%232E6E96' stroke-width='1'><path d='M-50 80 Q 150 20 300 80 T 650 80'/><path d='M-50 160 Q 150 100 300 160 T 650 160'/><path d='M-50 240 Q 150 180 300 240 T 650 240'/><path d='M-50 320 Q 150 260 300 320 T 650 320'/><path d='M-50 400 Q 150 340 300 400 T 650 400'/><path d='M-50 480 Q 150 420 300 480 T 650 480'/><path d='M-50 560 Q 150 500 300 560 T 650 560'/></g></svg>");
+    background-size: 600px 600px;
+    background-repeat: repeat;
+  }
+
+  /* Soft frost halo — wordmark, primary CTAs. Light from within, not a UI glow. */
+  .frost-halo {
+    filter: drop-shadow(0 0 22px rgba(95, 168, 211, 0.22));
+  }
+
+  /* Tactile press feedback for primary CTAs — hover glow already exists via
+     inline JS (boxShadow), this adds the one missing interaction state
+     (active/press). transform isn't touched by any inline style on these
+     buttons, so a plain class-based rule applies cleanly. */
+  .press-scale {
+    transition: transform 0.15s ease;
+  }
+  .press-scale:active {
+    transform: scale(0.97);
+  }
+
+  /* Arctic hue glow for the real-UI code/trace blocks (Waterfall,
+     ReplayDiff, LogStream) — a genuine ambient light-bleed in the site's
+     frost-blue hue (same rgba(95,168,211,*) as --glow-frost/.frost-halo,
+     for hue consistency with every other hover/glow moment on the site),
+     plus the thin 3-stop icy gradient border ring (same gradient as
+     AtmosphericVideo's reduced-motion fallback) for a crisp edge on top of
+     the soft glow.
+
+     Gotcha: these three components set their default box-shadow via an
+     INLINE style prop (style={{ boxShadow: "..." }}) for the resting
+     state. Inline styles always beat every stylesheet rule regardless of
+     specificity or layering — more absolute than the .frost-panel/
+     Tailwind-hover gotcha above — so a `.arctic-code-block:hover {
+     box-shadow: ... }` rule on the block itself can never fire; it was
+     silently dead code. The glow is instead painted on a dedicated
+     ::after (no mask, so its box-shadow renders cleanly), which has no
+     inline style to compete with. Plain :hover rules throughout (not
+     Tailwind hover: utilities) per the .frost-panel layering gotcha. */
+  .arctic-code-block {
+    position: relative;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .arctic-code-block:hover {
+    transform: scale(1.015);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .arctic-code-block {
+      transition: none;
+    }
+    .arctic-code-block:hover {
+      transform: none;
+    }
+  }
+  .arctic-code-block::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    background: linear-gradient(120deg, #EAF3FA 0%, #C9E2F1 50%, #EEF3F7 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .arctic-code-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    box-shadow: 0 0 24px 2px rgba(95, 168, 211, 0.45), 0 0 48px 8px rgba(95, 168, 211, 0.2);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  .arctic-code-block:hover::before,
+  .arctic-code-block:hover::after {
+    opacity: 1;
+  }
+
+  /* History: ReplayDiff (the hero-adjacent trace block, stretched to an
+     exact pixel height by a CSS Grid parent — see the two-column KPI
+     section in page.tsx) briefly had its hover scale disabled via a
+     `.no-hover-scale` modifier class, because the 1.015x transform
+     combined with the ::before gradient-ring mask produced a hairline
+     sub-pixel seam at the edges (confirmed via boundingBox() sampling at
+     the time: 888x600 -> 901.32x609, non-integer). That symptom didn't
+     reproduce after later layout changes in the same section (switching
+     the column wrappers from a hard `height: 600` to `minHeight: 600`,
+     among other tweaks) — reconfirmed clean via the same boundingBox()
+     + zoomed-corner-screenshot method before removing `.no-hover-scale`
+     and its rule here, restoring the shared hover-scale treatment so
+     ReplayDiff matches Waterfall/LogStream/CommandLog/InstallCommand
+     again. If a similar seam ever reappears, check whether something is
+     back to forcing this block's dimensions to non-integer pixel values
+     before assuming the mask/transform combo itself is at fault. */
+
+/* ─── Dashboard utilities ──────────────────────────────────────────── */
+.dash-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #C7D0D9 transparent;
+}
+.dash-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.dash-scroll::-webkit-scrollbar-thumb {
+  background: #C7D0D9;
+  border-radius: 9999px;
+}
+.dash-scroll::-webkit-scrollbar-thumb:hover { background: #A9B6C4; }
+
+/* Faint constellation grid backdrop for the dashboard canvas */
+.dash-grid {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(138,138,138, 0.06) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+@keyframes dash-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.dash-live-dot { animation: dash-pulse 2s ease-in-out infinite; }
+
+@keyframes dash-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.dash-fade-in { animation: dash-fade-in 0.4s ease-out both; }
+
+/* Hero headline's InputCycler ("one input" -> "two inputs" -> "many
+   inputs") typewriter cursor — a blinking border-right on the text itself
+   rather than a separate "|" character, so it costs ~2px, not a full
+   monospace character's width, and can sit flush after the last letter
+   even when the text fills the box's exact-fit width ("many inputs").
+   Hard on/off toggle (not a smooth fade), since a real terminal caret
+   blinks rather than pulses. */
+@keyframes typewriter-blink {
+  0%, 49% { border-color: var(--ink); }
+  50%, 100% { border-color: transparent; }
+}
+.typewriter-cursor {
+  border-right: 2px solid var(--ink);
+  padding-right: 2px;
+  animation: typewriter-blink 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none;
+    border-color: transparent;
+  }
+}
+
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* "Floe" hover — "F" and "loe" fade to the exact same two colors
+   IntroLoader's one-time splash flashes them to (F_FLASH_COLOR/
+   LOE_FLASH_COLOR in IntroLoader.tsx: #4781bc / #99bcda), so hovering
+   either instance of the wordmark reads as a deliberate callback to "the
+   very first animation" a visitor sees, not an arbitrary new blue. Two
+   trigger points share these classes: the header wordmark
+   (.wordmark-link, an actual <Link>) and the hero's "Fine-Tune Agents to
+   Floe" headline (.hero-floe-hover, a plain non-interactive <span> — just
+   a hover target, not a link). Resting color is plain --ink (set on each
+   parent element, not here) — this is a hover-only exception to
+   "frost-blue never in body text," not a change to that rule, since it's
+   inert until hovered and fades right back. Symmetric transition timing
+   handles both the fade-in (hover) and fade-out (un-hover) with one
+   rule. */
+.wordmark-f,
+.wordmark-loe {
+  transition: color 0.35s ease;
+}
+.wordmark-link:hover .wordmark-f,
+.hero-floe-hover:hover .wordmark-f {
+  color: #4781bc;
+}
+.wordmark-link:hover .wordmark-loe,
+.hero-floe-hover:hover .wordmark-loe {
+  color: #99bcda;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wordmark-f,
+  .wordmark-loe {
+    transition: none;
+  }
+}
+
+/* ── HUD scan-line — shared by every trace-console section ── */
+.hud-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  top: -2%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--hud-scan-color, 255, 255, 255), 0.55) 50%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px 1px rgba(var(--hud-scan-color, 255, 255, 255), 0.45);
+  animation: hud-scan 7s linear infinite;
+}
+@keyframes hud-scan {
+  0%   { top: -2%;  opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Procedural technical-noise backdrop — used in place of stock
+   photography, consistent with the site's fully procedural/canvas
+   constellation art direction (no external image dependency). ── */
+.hud-noise-backdrop {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(138,138,138,0.05) 0px, transparent 1px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(138,138,138,0.05) 0px, transparent 1px, transparent 3px),
+    radial-gradient(circle at 1px 1px, rgba(138,138,138, 0.08) 1px, transparent 0);
+  background-size: 3px 3px, 3px 3px, 24px 24px;
+  opacity: 0.5;
 }
