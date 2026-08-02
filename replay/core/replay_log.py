@@ -176,6 +176,7 @@ def build_diff(replay: Dict[str, Any], original: Dict[str, Any]) -> Dict[str, An
     changes = replay.get("changes", {})
 
     rows: List[Dict[str, Any]] = []
+    forked_fields: List[Dict[str, Any]] = []
     llm_cursor = 0
     tool_cursor = 0
 
@@ -244,6 +245,7 @@ def build_diff(replay: Dict[str, Any], original: Dict[str, Any]) -> Dict[str, An
                             })
             before = sp.output_of(source) if source else ""
             changed = bool(fields)
+            forked_fields = fields
 
         elif kind == "downstream":
             if sp.is_llm_span(span) and attrs.get("replay.rerun"):
@@ -284,6 +286,11 @@ def build_diff(replay: Dict[str, Any], original: Dict[str, Any]) -> Dict[str, An
         })
 
     entry = replay_index_entry(replay)
+    # Replays written before the engine stored changes_readable have no record
+    # of what they replaced — but here we have the original trace, so the
+    # forked row's own before/after is the better answer for the header too.
+    if not replay.get("changes_readable") and forked_fields:
+        entry["changes"] = forked_fields
     return {
         **entry,
         "rows": rows,
