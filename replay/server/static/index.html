@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Replay Console</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div id="app">
+    <nav id="rail">
+      <div class="rail-brand">
+        <span class="rail-mark">◈</span>
+        <span class="rail-name">Replay</span>
+      </div>
+
+      <button class="rail-item" data-view="overview">
+        <span class="rail-icon">▦</span><span class="rail-label">Overview</span>
+      </button>
+      <button class="rail-item" data-view="traces">
+        <span class="rail-icon">◇</span><span class="rail-label">Traces</span>
+        <span class="rail-count" id="count-traces"></span>
+      </button>
+      <button class="rail-item" data-view="pressure">
+        <span class="rail-icon">◈</span><span class="rail-label">Pressure tests</span>
+        <span class="rail-count" id="count-pressure"></span>
+      </button>
+      <button class="rail-item" data-view="replays">
+        <span class="rail-icon">↺</span><span class="rail-label">Replay log</span>
+        <span class="rail-count" id="count-replays"></span>
+      </button>
+      <button class="rail-item" data-view="tools">
+        <span class="rail-icon">⚙</span><span class="rail-label">Tools</span>
+        <span class="rail-count" id="count-tools"></span>
+      </button>
+
+      <div class="rail-foot">
+        <div id="rail-status" class="rail-status"></div>
+        <button class="rail-refresh" id="refresh-btn" title="Reload everything">↻ Refresh</button>
+      </div>
+    </nav>
+
+    <main id="main">
+      <header id="topbar">
+        <div class="topbar-text">
+          <h1 id="view-title">Overview</h1>
+          <p id="view-sub" class="view-sub"></p>
+        </div>
+        <div id="view-actions" class="view-actions"></div>
+      </header>
+      <div id="view"></div>
+    </main>
+  </div>
+
+  <div id="drawer" class="drawer" hidden>
+    <div class="drawer-backdrop" data-close-drawer></div>
+    <section class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <header class="drawer-head">
+        <div>
+          <h2 id="drawer-title"></h2>
+          <p id="drawer-sub" class="drawer-sub"></p>
+        </div>
+        <button class="drawer-close" data-close-drawer aria-label="Close">✕</button>
+      </header>
+      <div id="drawer-body" class="drawer-body"></div>
+    </section>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+{
+  "trace_id": "3d793a2744417eb91a4d60ccee08da59",
+  "created_at": "2026-07-17T06:53:40.239435",
+  "spans": [
+    {
+      "span_id": "7f8e625c0332783c",
+      "trace_id": "3d793a2744417eb91a4d60ccee08da59",
+      "parent_span_id": null,
+      "name": "openai.chat",
+      "start_time": 1784271215876061000,
+      "end_time": 1784271218995722000,
+      "duration_ms": 3119.661,
+      "status": "UNSET",
+      "attributes": {
+        "llm.request.type": "chat",
+        "gen_ai.system": "openai",
+        "gen_ai.request.model": "gpt-3.5-turbo",
+        "gen_ai.request.temperature": 0,
+        "llm.headers": "None",
+        "llm.is_streaming": false,
+        "gen_ai.openai.api_base": "https://api.openai.com/v1/",
+        "gen_ai.prompt.0.role": "user",
+        "gen_ai.prompt.0.content": "What is the capital of Zorblax and what is its population?",
+        "llm.request.functions.0.name": "get_capital",
+        "llm.request.functions.0.description": "Returns the capital city of a country.",
+        "llm.request.functions.0.parameters": "{\"type\": \"object\", \"properties\": {\"country\": {\"type\": \"string\"}}, \"required\": [\"country\"]}",
+        "llm.request.functions.1.name": "get_population",
+        "llm.request.functions.1.description": "Returns the approximate population of a city.",
+        "llm.request.functions.1.parameters": "{\"type\": \"object\", \"properties\": {\"city\": {\"type\": \"string\"}}, \"required\": [\"city\"]}",
+        "llm.request.reasoning_effort": [],
+        "gen_ai.response.model": "gpt-3.5-turbo-0125",
+        "gen_ai.response.id": "chatcmpl-E2WjxKKXmfygigcLgn5jxTMihSOiN",
+        "openai.response.service_tier": "default",
+        "llm.usage.total_tokens": 135,
+        "gen_ai.usage.output_tokens": 50,
+        "gen_ai.usage.input_tokens": 85,
+        "gen_ai.usage.cache_read_input_tokens": 0,
+        "llm.usage.reasoning_tokens": 0,
+        "gen_ai.completion.0.finish_reason": "tool_calls",
+        "gen_ai.completion.0.role": "assistant",
+        "gen_ai.completion.0.tool_calls.0.id": "call_oGDZujZNMZJZc2w8gPCekpOr",
+        "gen_ai.completion.0.tool_calls.0.name": "get_capital",
+        "gen_ai.completion.0.tool_calls.0.arguments": "{\"country\": \"Zorblax\"}",
+        "gen_ai.completion.0.tool_calls.1.id": "call_aND9tSmqy8BJKtzwLS3fe0pb",
+        "gen_ai.completion.0.tool_calls.1.name": "get_population",
+        "gen_ai.completion.0.tool_calls.1.arguments": "{\"city\": \"Zorblax\"}",
+        "replay.messages_json": "[{\"role\": \"user\", \"content\": \"What is the capital of Zorblax and what is its population?\"}]",
+        "replay.tool_call_map_json": "{\"call_oGDZujZNMZJZc2w8gPCekpOr\": \"get_capital\", \"call_aND9tSmqy8BJKtzwLS3fe0pb\": \"get_population\"}"
+      },
+      "events": []
+    }
+  ]
+}
