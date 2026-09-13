@@ -6,6 +6,97 @@ When a multi-step agent fails, you don't want to rerun the world. You want to fo
 
 ---
 
+## Install
+
+### Requirements
+
+| | |
+|---|---|
+| **Python** | 3.10 or newer (`python3 --version` to check) |
+| **OS** | macOS, Linux, or Windows |
+| **OpenAI API key** | Only for *capturing* new traces and for replays/pressure tests — browsing traces already on disk needs no key |
+| **Node.js** | Not required. Only for the marketing site in `app/` — the Replay Console dashboard is pure Python |
+
+If you don't have Python 3.10+: [python.org/downloads](https://www.python.org/downloads/), or `brew install python@3.11` on macOS.
+
+### Install
+
+```bash
+git clone https://github.com/dhruv-vootkuri/Replay.git
+cd Replay
+
+python3 -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+
+pip install -e ".[demo]"
+```
+
+That's it. `pip install -e ".[demo]"` installs the engine, the web console, and the LangChain packages needed to run the included demo agent, and puts a `replay` command on your PATH.
+
+Leave off `[demo]` (`pip install -e .`) if you only want to explore and replay traces and won't be capturing new ones from a LangChain agent.
+
+> Prefer the exact versions this was built against? `pip install -r requirements.txt` instead, then `pip install -e . --no-deps`.
+
+### Verify it worked
+
+The repo ships with real captured traces, so you can confirm everything works before writing a line of code or spending a cent:
+
+```bash
+replay list
+```
+
+```
+4 trace(s) found:
+
+  a7f3521dceaf7e37...
+  18 spans  •  3 LLM calls  •  5 tool calls  •  5.3s
+  ...
+```
+
+Then open the dashboard:
+
+```bash
+replay serve                      # → http://localhost:7823
+```
+
+Browse the traces, open any span, and read the replay log — all without an API key.
+
+### Add your API key
+
+Needed once you want to capture new traces or run replays and pressure tests (both make real model calls):
+
+```bash
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY=sk-...
+```
+
+Or export it directly:
+
+```bash
+export OPENAI_API_KEY=sk-...      # Windows: set OPENAI_API_KEY=sk-...
+```
+
+### Capture your first trace
+
+```bash
+python demo_agent.py              # runs the included trip-planner agent
+replay list                       # your new trace is at the bottom
+replay explore <trace_id>         # arrow keys to navigate, Enter to fork
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `replay: command not found` | The venv isn't active. `source venv/bin/activate` (Windows: `venv\Scripts\activate`) |
+| `ModuleNotFoundError: No module named 'replay'` | Same cause — activate the venv, or re-run `pip install -e .` |
+| `ModuleNotFoundError: langchain` when running `demo_agent.py` | Installed without the extra. Run `pip install -e ".[demo]"` |
+| `AuthenticationError` / 401 from OpenAI | `OPENAI_API_KEY` isn't set or is invalid. See "Add your API key" above |
+| `Address already in use` on `replay serve` | Another process has the port. Use `replay serve --port 8080` |
+| `No traces found` | You're not in the repo root, or pointing elsewhere. `cd` to the repo, or pass `--dir path/to/traces` |
+
+---
+
 ## Features
 
 ### One-line instrumentation
@@ -201,6 +292,8 @@ All `<trace_id>`, `<span_id>`, `<replay_id>` and `<run_id>` arguments accept par
 
 ## Quickstart
 
+Assumes you've done the [Install](#install) above and your venv is active.
+
 ```python
 # my_agent.py
 import replay
@@ -218,9 +311,11 @@ agent.invoke({"messages": [{"role": "user", "content": "Weather in Paris?"}]})
 ```
 
 ```bash
+export OPENAI_API_KEY=sk-...           # or put it in .env
 python my_agent.py
 replay list                            # see the captured trace
 replay explore <trace_id>              # fork at any step
+replay serve                           # or browse everything at localhost:7823
 ```
 
 ---
@@ -281,6 +376,6 @@ Python 3.11 · OpenTelemetry (api, sdk) · `opentelemetry-instrumentation-openai
 - JSON file storage — fine for local dev; production usage will want a real database
 - Tested primarily with LangChain/LangGraph + OpenAI; other OTel-instrumented frameworks should work but have less coverage
 - Streaming LLM responses are not yet handled
-- No pip package yet — install from source
+- Installs from source (`pip install -e .`) — not published to PyPI yet
 - A pressure run costs one full agent replay per trace — real model calls, real spend. Start with a few traces before pointing it at everything.
 - Pressure runs execute in the server/CLI process with a thread pool; there is no queue or worker, so a very large trace set is better split across runs
