@@ -19,9 +19,9 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional
 
-from replay.core import spans as sp
-from replay.core.engine import ReplayEngine
-from replay.core.loader import TraceLoader
+from floe.core import spans as sp
+from floe.core.engine import ReplayEngine
+from floe.core.loader import TraceLoader
 
 
 PRESSURE_DIRNAME = "pressure"

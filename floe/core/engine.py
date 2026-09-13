@@ -5,9 +5,9 @@ import time
 import uuid
 from typing import Any, Callable, Dict, Optional
 
-from replay.core.loader import TraceLoader
-from replay.core.tool_registry import get_registry
-from replay.core.auth import verify_api_key
+from floe.core.loader import TraceLoader
+from floe.core.tool_registry import get_registry
+from floe.core.auth import verify_api_key
 
 
 class ReplayEngine:

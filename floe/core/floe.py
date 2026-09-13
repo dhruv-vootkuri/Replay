@@ -5,7 +5,7 @@ ReplayEngine is only reachable as a child of a validated Floe instance —
 there's no way to get a working engine without first passing a valid key
 here:
 
-    from replay import Floe
+    from floe import Floe
 
     floe = Floe(api_key="fl-...")
     floe.engine.replay(trace_id=..., fork_span_id=..., changes={...})
@@ -15,8 +15,8 @@ FastAPI server both do it that way, reading REPLAY_API_KEY from the
 environment instead) — Floe is the recommended, explicit-key entry point
 for embedding this package in your own code, not a replacement for that.
 """
-from replay.core.auth import verify_api_key
-from replay.core.engine import ReplayEngine
+from floe.core.auth import verify_api_key
+from floe.core.engine import ReplayEngine
 
 
 class Floe:

@@ -17,27 +17,27 @@ globals, so a tool that references a module-level dict raises NameError on
 replay. Every tool below therefore defines its own data inline.
 
 Each tool is decorated twice:
-    @tool               -> makes it a LangChain BaseTool (for capture)
-    @replay.tool(safe=) -> registers it with Replay (for re-run on replay)
+    @tool             -> makes it a LangChain BaseTool (for capture)
+    @floe.tool(safe=) -> registers it with Replay (for re-run on replay)
 
 Usage:
     export OPENAI_API_KEY=sk-...
-    venv/bin/python -m replay.cli run demo_agent.py     # capture + explore
+    venv/bin/floe replay run demo_agent.py     # capture + explore
     # or just capture a trace:
     venv/bin/python demo_agent.py
 """
-import replay
+import floe
 from langchain.agents import create_agent
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 
-replay.init()  # one line: OTel tracing -> ./traces
+floe.init()  # one line: OTel tracing -> ./traces
 
 MODEL = "gpt-4o-mini"  # any tool-calling OpenAI model works
 
 
 @tool
-@replay.tool(safe=True)
+@floe.tool(safe=True)
 def get_capital(country: str) -> str:
     """Return the capital city of a country."""
     capitals = {
@@ -49,7 +49,7 @@ def get_capital(country: str) -> str:
 
 
 @tool
-@replay.tool(safe=True)
+@floe.tool(safe=True)
 def get_population(city: str) -> str:
     """Return the approximate population of a city."""
     populations = {
@@ -60,7 +60,7 @@ def get_population(city: str) -> str:
 
 
 @tool
-@replay.tool(safe=True)
+@floe.tool(safe=True)
 def get_weather(city: str) -> str:
     """Return the current weather in a city."""
     weather = {
@@ -72,7 +72,7 @@ def get_weather(city: str) -> str:
 
 
 @tool
-@replay.tool(safe=True)
+@floe.tool(safe=True)
 def get_currency(country: str) -> str:
     """Return the ISO currency code used by a country."""
     currencies = {
@@ -83,7 +83,7 @@ def get_currency(country: str) -> str:
 
 
 @tool
-@replay.tool(safe=True)
+@floe.tool(safe=True)
 def convert_from_usd(amount: float, to_currency: str) -> str:
     """Convert an amount in USD into the given currency code."""
     usd_rates = {"EUR": 0.92, "JPY": 157.0, "BRL": 5.4, "ZBX": 0.5, "USD": 1.0}

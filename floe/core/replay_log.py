@@ -10,7 +10,7 @@ import json
 import os
 from typing import Any, Dict, List, Optional
 
-from replay.core import spans as sp
+from floe.core import spans as sp
 
 
 REPLAY_MARKER = ".replay."

@@ -3,16 +3,17 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "replay-agent"
+name = "floe"
 version = "0.1.0"
 description = "Git for agent execution — fork any step of a captured agent trace and rerun from there."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 
-# Core runtime. Everything `replay list/show/fork/diff/explore/serve/pressure`
-# needs. LangChain is deliberately NOT here — it is only required to *capture*
-# traces from a LangChain agent, not to replay ones already on disk.
+# Core runtime. Everything `floe replay list/show/fork/diff/explore/serve/
+# pressure` needs. LangChain is deliberately NOT here — it is only required
+# to *capture* traces from a LangChain agent, not to replay ones already on
+# disk.
 dependencies = [
     "opentelemetry-api>=1.40.0",
     "opentelemetry-sdk>=1.40.0",
@@ -38,12 +39,12 @@ demo = [
 ]
 
 [project.scripts]
-replay = "replay.cli:cli"
+floe = "floe.cli:floe"
 
 [tool.setuptools.packages.find]
-include = ["replay*"]
+include = ["floe*"]
 
-# The dashboard frontend ships inside the wheel — `replay serve` mounts it
-# from replay/server/static, so it must not be left behind at build time.
+# The dashboard frontend ships inside the wheel — `floe replay serve` mounts
+# it from floe/server/static, so it must not be left behind at build time.
 [tool.setuptools.package-data]
-"replay.server" = ["static/*"]
+"floe.server" = ["static/*"]

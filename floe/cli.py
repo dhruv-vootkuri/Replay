@@ -2,9 +2,9 @@ import click
 import json
 import os
 import sys
-from replay.core.loader import TraceLoader
-from replay.core.engine import ReplayEngine
-from replay.core.auth import InvalidApiKey, verify_api_key
+from floe.core.loader import TraceLoader
+from floe.core.engine import ReplayEngine
+from floe.core.auth import InvalidApiKey, verify_api_key
 
 def _build_tree_nodes(spans, spans_by_id):
     """
@@ -93,9 +93,10 @@ def format_span_name(span):
 
 
 @click.group()
-def cli():
+def floe():
     """
-    Replay — fork any agent trace at any step and see what would have happened.
+    Floe — the API-key-gated CLI. `replay` is the only subcommand group
+    today, but this top level is where anything else Floe-side would live.
     """
     try:
         verify_api_key()
@@ -104,7 +105,13 @@ def cli():
         sys.exit(1)
 
 
-@cli.command(name="list")
+@floe.group()
+def replay():
+    """Fork any agent trace at any step and see what would have happened."""
+    pass
+
+
+@replay.command(name="list")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def list_cmd(traces_dir):
     """List all captured traces."""
@@ -112,7 +119,7 @@ def list_cmd(traces_dir):
     traces = loader.list_traces()
 
     if not traces:
-        click.echo("No traces found. Run your agent with replay.init() to capture traces.")
+        click.echo("No traces found. Run your agent with floe.init() to capture traces.")
         return
 
     click.echo(bold(f"\n{len(traces)} trace(s) found:\n"))
@@ -139,7 +146,7 @@ def list_cmd(traces_dir):
         click.echo()
 
 
-@cli.command()
+@replay.command()
 @click.argument("trace_id")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def show(trace_id, traces_dir):
@@ -241,7 +248,7 @@ def show(trace_id, traces_dir):
     click.echo()
 
 
-@cli.command()
+@replay.command()
 @click.argument("trace_id")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 @click.option("--ids", is_flag=True, help="Show span IDs")
@@ -272,7 +279,7 @@ def ids(trace_id, traces_dir, ids):
     click.echo()
 
 
-@cli.command()
+@replay.command()
 @click.argument("trace_id")
 @click.argument("span_id")
 @click.option("--set", "attribute_overrides", multiple=True,
@@ -393,12 +400,12 @@ def fork(trace_id, span_id, attribute_overrides, temperature, traces_dir):
     click.echo()
 
 
-@cli.command()
+@replay.command()
 @click.argument("replay_id")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def diff(replay_id, traces_dir):
     """Compare a replay against its original trace."""
-    from replay.core import replay_log
+    from floe.core import replay_log
 
     replay = replay_log.load_replay(traces_dir, replay_id)
     if replay is None:
@@ -459,7 +466,7 @@ def diff(replay_id, traces_dir):
     click.echo()
 
 
-@cli.command(name="replays")
+@replay.command(name="replays")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 @click.option("--trace", "trace_filter", default=None,
               help="Only replays of this original trace")
@@ -471,7 +478,7 @@ def replays_cmd(traces_dir, trace_filter, limit):
         replay replays
         replay replays --trace a7f35 --limit 5
     """
-    from replay.core import replay_log
+    from floe.core import replay_log
 
     full_trace_id = None
     if trace_filter:
@@ -506,7 +513,7 @@ def replays_cmd(traces_dir, trace_filter, limit):
         click.echo()
 
 
-@cli.command(name="prompts")
+@replay.command(name="prompts")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def prompts_cmd(traces_dir):
     """
@@ -515,7 +522,7 @@ def prompts_cmd(traces_dir):
     This is the starting point for a pressure test — pick a prompt, edit it,
     then run it back against every trace that shares it.
     """
-    from replay.core.pressure import prompt_inventory
+    from floe.core.pressure import prompt_inventory
 
     loader = TraceLoader(traces_dir)
     inventory = prompt_inventory(loader)
@@ -542,7 +549,7 @@ def prompts_cmd(traces_dir):
     click.echo()
 
 
-@cli.command(name="pressure")
+@replay.command(name="pressure")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 @click.option("--set-prompt", "prompt_text", default=None,
               help="The candidate system prompt to test")
@@ -584,7 +591,7 @@ def pressure_cmd(traces_dir, prompt_text, prompt_file, from_prompt, trace_ids,
         replay pressure --prompt-file new_prompt.txt --contains Tokyo
     """
     import time
-    from replay.core import pressure as P
+    from floe.core import pressure as P
 
     loader = TraceLoader(traces_dir)
 
@@ -714,11 +721,11 @@ def pressure_cmd(traces_dir, prompt_text, prompt_file, from_prompt, trace_ids,
     click.echo()
 
 
-@cli.command(name="pressure-log")
+@replay.command(name="pressure-log")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def pressure_log_cmd(traces_dir):
     """List every pressure run, newest first."""
-    from replay.core.pressure import PressureStore
+    from floe.core.pressure import PressureStore
 
     runs = PressureStore(traces_dir).list()
     if not runs:
@@ -739,12 +746,12 @@ def pressure_log_cmd(traces_dir):
         click.echo()
 
 
-@cli.command(name="pressure-show")
+@replay.command(name="pressure-show")
 @click.argument("run_id")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def pressure_show_cmd(run_id, traces_dir):
     """Show the full results of one pressure run."""
-    from replay.core.pressure import PressureStore
+    from floe.core.pressure import PressureStore
 
     run = PressureStore(traces_dir).load(run_id)
     if run is None:
@@ -1144,8 +1151,14 @@ def _load_saved_tools() -> bool:
     registers them into the tool registry so fork can run them for real.
     Returns True if tools were loaded, False if no sources file exists.
     """
-    from replay.tools import TOOL_SOURCES_FILE
-    import replay as _replay
+    from floe.tools import TOOL_SOURCES_FILE
+    # Bound as "replay" (not "floe") on purpose — every existing
+    # .replay/tool_sources.py file was snapshotted with @replay.tool(...)
+    # decorators (see tools.py's save_source, which still writes that
+    # exact string), so this name needs to keep resolving to the real
+    # package regardless of what floe/replay are actually called at the
+    # top level.
+    import floe as _replay
 
     if not os.path.exists(TOOL_SOURCES_FILE):
         return False
@@ -1155,7 +1168,7 @@ def _load_saved_tools() -> bool:
     return True
 
 
-@cli.command()
+@replay.command()
 @click.argument("trace_id")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 @click.option("--reload-tools", "reload_script", default=None, metavar="SCRIPT",
@@ -1214,7 +1227,7 @@ def explore(trace_id, traces_dir, reload_script):
     _run_explore(matches[0], traces_dir)
 
 
-@cli.command()
+@replay.command()
 @click.argument("script")
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 def run(script, traces_dir):
@@ -1259,7 +1272,7 @@ def run(script, traces_dir):
     if not new_traces:
         click.echo(yellow("No new traces captured."))
         click.echo(grey(
-            "Make sure your script calls replay.init() before running the agent."
+            "Make sure your script calls floe.init() before running the agent."
         ))
         return
 
@@ -1271,7 +1284,7 @@ def run(script, traces_dir):
     _run_explore(latest, traces_dir)
 
 
-@cli.command()
+@replay.command()
 @click.option("--dir", "traces_dir", default="traces", help="Traces directory")
 @click.option("--port", default=7823, help="Port (default 7823)")
 @click.option("--no-browser", is_flag=True, help="Don't open browser automatically")
@@ -1301,7 +1314,7 @@ def serve(traces_dir, port, no_browser):
         click.echo(red("fastapi not installed. Run: pip install fastapi"))
         return
 
-    from replay.server.app import app, init_server
+    from floe.server.app import app, init_server
 
     click.echo()
     if not _load_saved_tools():
@@ -1333,4 +1346,4 @@ def serve(traces_dir, port, no_browser):
 
 
 if __name__ == "__main__":
-    cli()
+    floe()

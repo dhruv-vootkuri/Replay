@@ -2,7 +2,7 @@ import inspect
 import os
 import textwrap
 from typing import Callable, Optional
-from replay.core.tool_registry import get_registry
+from floe.core.tool_registry import get_registry
 
 TOOL_SOURCES_FILE = ".replay/tool_sources.py"
 

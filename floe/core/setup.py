@@ -3,7 +3,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 from opentelemetry.instrumentation.langchain import LangchainInstrumentor
-from replay.exporters.json_exporter import JSONFileExporter
+from floe.exporters.json_exporter import JSONFileExporter
 
 
 def setup_tracing(exporter=None, output_dir="traces"):

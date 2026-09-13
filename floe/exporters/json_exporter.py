@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
-from replay.core.enrichment import ReplayEnrichmentProcessor
+from floe.core.enrichment import ReplayEnrichmentProcessor
 
 
 class JSONFileExporter(SpanExporter):

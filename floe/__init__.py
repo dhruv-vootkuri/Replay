@@ -1,12 +1,12 @@
 import os
 import atexit
 
-from replay.core.setup import setup_tracing, get_tracer
-from replay.core.loader import TraceLoader
-from replay.core.engine import ReplayEngine
-from replay.core.floe import Floe
-from replay.core.tool_registry import get_registry
-from replay.tools import tool
+from floe.core.setup import setup_tracing, get_tracer
+from floe.core.loader import TraceLoader
+from floe.core.engine import ReplayEngine
+from floe.core.floe import Floe
+from floe.core.tool_registry import get_registry
+from floe.tools import tool
 
 
 def init(api_key: str = None, output_dir: str = "traces", exporter=None):
@@ -47,17 +47,17 @@ def explore(trace_id: str = None, traces_dir: str = "traces"):
         traces_dir: where traces are stored. Defaults to "traces".
 
     Usage:
-        replay.explore()                    # latest trace
-        replay.explore("f6caa")             # specific trace
-        replay.explore(traces_dir="runs")   # custom directory
+        floe.explore()                    # latest trace
+        floe.explore("f6caa")             # specific trace
+        floe.explore(traces_dir="runs")   # custom directory
     """
-    from replay.cli import _run_explore
+    from floe.cli import _run_explore
 
     loader = TraceLoader(traces_dir)
     all_traces = loader.list_traces()
 
     if not all_traces:
-        print("No traces found. Run your agent with replay.init() first.")
+        print("No traces found. Run your agent with floe.init() first.")
         return
 
     if trace_id:

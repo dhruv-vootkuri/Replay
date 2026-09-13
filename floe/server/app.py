@@ -15,11 +15,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from replay.core import pressure as pressure_mod
-from replay.core import replay_log
-from replay.core import spans as sp
-from replay.core.engine import ReplayEngine
-from replay.core.loader import TraceLoader
+from floe.core import pressure as pressure_mod
+from floe.core import replay_log
+from floe.core import spans as sp
+from floe.core.engine import ReplayEngine
+from floe.core.loader import TraceLoader
 
 app = FastAPI(title="Replay Console")
 
