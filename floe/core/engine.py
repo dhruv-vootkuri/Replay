@@ -722,7 +722,12 @@ class ReplayEngine:
     # ------------------------------------------------------------------ #
 
     def _is_llm_span(self, span: Dict[str, Any]) -> bool:
-        return any(k.startswith("gen_ai.prompt.") for k in span.get("attributes", {}))
+        attrs = span.get("attributes", {})
+        return (
+            "gen_ai.input.messages" in attrs
+            or "gen_ai.system_instructions" in attrs
+            or any(k.startswith("gen_ai.prompt.") for k in attrs)
+        )
 
     def _is_tool_span(self, span: Dict[str, Any]) -> bool:
         attrs = span.get("attributes", {})
