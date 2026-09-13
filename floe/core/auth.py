@@ -12,10 +12,10 @@ import os
 import urllib.error
 import urllib.request
 
-# No real hosted Floe URL exists yet — this project runs locally
-# (`npm run dev` in floe-app, http://localhost:3000). Set FLOE_API_URL to
-# override once/if Floe is actually deployed somewhere.
-DEFAULT_FLOE_URL = "http://localhost:3000"
+# Floe is hosted at joinfloe.com — this is what every install verifies its
+# key against out of the box. Override with FLOE_API_URL for local
+# development against `npm run dev` in floe-app (http://localhost:3000).
+DEFAULT_FLOE_URL = "https://joinfloe.com"
 
 
 class InvalidApiKey(Exception):
