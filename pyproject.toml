@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "replay-agent"
+version = "0.1.0"
+description = "Git for agent execution — fork any step of a captured agent trace and rerun from there."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+
+# Core runtime. Everything `replay list/show/fork/diff/explore/serve/pressure`
+# needs. LangChain is deliberately NOT here — it is only required to *capture*
+# traces from a LangChain agent, not to replay ones already on disk.
+dependencies = [
+    "opentelemetry-api>=1.40.0",
+    "opentelemetry-sdk>=1.40.0",
+    "opentelemetry-instrumentation-openai>=0.53.3",
+    "opentelemetry-instrumentation-langchain>=0.53.3",
+    "openai>=2.0.0",
+    "litellm>=1.80.0",
+    "click>=8.1",
+    "blessed>=1.20",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pydantic>=2.7",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# Needed only to run demo_agent.py / capture traces from a LangChain agent.
+demo = [
+    "langchain>=1.2",
+    "langchain-openai>=1.1",
+    "langchain-core>=1.2",
+    "langgraph>=1.1",
+]
+
+[project.scripts]
+replay = "replay.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["replay*"]
+
+# The dashboard frontend ships inside the wheel — `replay serve` mounts it
+# from replay/server/static, so it must not be left behind at build time.
+[tool.setuptools.package-data]
+"replay.server" = ["static/*"]
