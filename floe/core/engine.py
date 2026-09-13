@@ -27,7 +27,7 @@ class ReplayEngine:
 
     def __init__(self, traces_dir: str = "traces", api_key: str = None, floe_url: str = None):
         # api_key/floe_url are optional here and fall back to the
-        # REPLAY_API_KEY/FLOE_API_URL environment variables — that's the
+        # FLOE_API_KEY/FLOE_API_URL environment variables — that's the
         # path the CLI and the FastAPI server use. Floe (core/floe.py)
         # passes its already-known key down explicitly instead, so
         # `Floe(api_key=...).engine` doesn't depend on the environment at
