@@ -1,6 +1,7 @@
 import click
 import json
 import os
+import time
 from replay.core.loader import TraceLoader
 from replay.core.engine import ReplayEngine
 
@@ -577,7 +578,6 @@ def pressure_cmd(traces_dir, prompt_text, prompt_file, from_prompt, trace_ids,
         # require a fact to survive
         replay pressure --prompt-file new_prompt.txt --contains Tokyo
     """
-    import time
     from replay.core import pressure as P
 
     loader = TraceLoader(traces_dir)
@@ -1324,6 +1324,341 @@ def serve(traces_dir, port, no_browser):
         threading.Thread(target=_open, daemon=True).start()
 
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
+
+
+# ------------------------------------------------------------------ #
+# The pressure agent — pressure tests that re-run themselves           #
+# ------------------------------------------------------------------ #
+
+@cli.group(name="agent")
+def agent_group():
+    """
+    Run pressure tests on a loop instead of by hand.
+
+    Register a system prompt as a watch, then let the agent re-run it against
+    your traces on an interval — new captures included — and tell you when
+    something that used to pass starts failing.
+
+        replay agent watch --from-prompt 0 --every 30m
+        replay agent start <watch_id>
+        replay agent status
+    """
+    pass
+
+
+def _watch_verdict_color(verdict):
+    return {"pass": green, "warn": yellow, "idle": grey}.get(verdict, red)
+
+
+@agent_group.command(name="watch")
+@click.option("--dir", "traces_dir", default="traces", help="Traces directory")
+@click.option("--set-prompt", "prompt_text", default=None,
+              help="The system prompt to watch")
+@click.option("--prompt-file", type=click.Path(exists=True), default=None,
+              help="Read the watched prompt from a file")
+@click.option("--from-prompt", "from_prompt", type=int, default=None,
+              metavar="N", help="Watch prompt N from `replay prompts`")
+@click.option("--every", "interval", default="30m", show_default=True,
+              help="How often to run a cycle (30s, 15m, 2h)")
+@click.option("--trace", "trace_ids", multiple=True,
+              help="Pin the watch to specific traces (default: all, including new ones)")
+@click.option("--contains", "contains", multiple=True,
+              help="Assert the answer still contains this")
+@click.option("--not-contains", "not_contains", multiple=True,
+              help="Assert the answer never contains this")
+@click.option("--similarity", default=0.4, show_default=True,
+              help="Similarity warning threshold")
+@click.option("--name", default="", help="Name for this watch")
+@click.option("--temperature", default=0.0, show_default=True,
+              help="Temperature for replayed LLM calls")
+@click.option("--parallel", default=2, show_default=True,
+              help="Traces to replay concurrently")
+def agent_watch_cmd(traces_dir, prompt_text, prompt_file, from_prompt, interval,
+                    trace_ids, contains, not_contains, similarity, name,
+                    temperature, parallel):
+    """
+    Register a prompt to watch. Does not run anything yet.
+
+        replay agent watch --from-prompt 0 --every 30m
+        replay agent watch --prompt-file prod_prompt.txt --contains Tokyo
+    """
+    from replay.core import agent as A
+    from replay.core import pressure as P
+
+    loader = TraceLoader(traces_dir)
+
+    if prompt_file:
+        prompt = open(prompt_file).read().strip()
+    elif prompt_text:
+        prompt = prompt_text
+    elif from_prompt is not None:
+        inventory = P.prompt_inventory(loader)
+        if from_prompt >= len(inventory) or inventory[from_prompt]["prompt"] is None:
+            click.echo(red(f"No prompt [{from_prompt}] — see: replay prompts"))
+            return
+        prompt = inventory[from_prompt]["prompt"]
+    else:
+        click.echo(red(
+            "Give a prompt to watch: --set-prompt, --prompt-file, or --from-prompt N"
+        ))
+        return
+
+    try:
+        interval_seconds = A.parse_interval(interval)
+    except ValueError as exc:
+        click.echo(red(str(exc)))
+        return
+
+    available = loader.list_traces()
+    pinned = None
+    if trace_ids:
+        pinned = []
+        for raw in trace_ids:
+            matches = [t for t in available if t.startswith(raw)]
+            if not matches:
+                click.echo(red(f"No trace found matching: {raw}"))
+                return
+            pinned.append(matches[0])
+        pinned = list(dict.fromkeys(pinned))
+
+    checks = P.default_check_config()
+    checks["similarity"] = {"enabled": True, "threshold": similarity}
+    if contains:
+        checks["must_contain"] = {"enabled": True, "values": list(contains)}
+    if not_contains:
+        checks["must_not_contain"] = {"enabled": True, "values": list(not_contains)}
+
+    agent = A.PressureAgent(traces_dir)
+    watch = agent.create_watch(
+        system_prompt=prompt,
+        name=name,
+        checks=checks,
+        interval_seconds=interval_seconds,
+        temperature=temperature,
+        concurrency=parallel,
+        trace_ids=pinned,
+    )
+
+    scope = (f"{len(pinned)} pinned trace(s)" if pinned
+             else f"all traces (currently {len(available)}, new ones included)")
+
+    click.echo()
+    click.echo(green("✓ Watch created"))
+    click.echo(f"  {bold(watch['name'])} {grey(watch['watch_id'][:12])}")
+    click.echo(f"  every {bold(A.format_interval(interval_seconds))} · {scope}")
+    click.echo()
+    click.echo(bold("Watched system prompt:"))
+    for line in prompt.splitlines() or [""]:
+        click.echo(f"  {line}")
+    click.echo()
+    click.echo(grey(f"  Start it:  replay agent start {watch['watch_id'][:12]}"))
+    click.echo(grey("  One cycle: add --once"))
+    click.echo()
+
+
+@agent_group.command(name="start")
+@click.argument("watch_id")
+@click.option("--dir", "traces_dir", default="traces", help="Traces directory")
+@click.option("--once", is_flag=True, help="Run a single cycle, then exit")
+@click.option("--no-full-first", is_flag=True,
+              help="Skip the opening full sweep (only grade traces not yet covered)")
+@click.option("--yes", is_flag=True, help="Skip the cost confirmation")
+def agent_start_cmd(watch_id, traces_dir, once, no_full_first, yes):
+    """
+    Run a watch. Blocks, cycling until you stop it with Ctrl-C.
+
+    Each cycle is a real pressure run — real model calls, real spend — so the
+    first thing it prints is how many traces it is about to replay.
+    """
+    from replay.core import agent as A
+
+    agent = A.PressureAgent(traces_dir)
+    watch = agent.store.load(watch_id)
+    if watch is None:
+        click.echo(red(f"No watch matching: {watch_id}"))
+        click.echo(grey("  See them with: replay agent status"))
+        return
+
+    if not _load_saved_tools():
+        click.echo(yellow(
+            "⚠  No saved tool sources (.replay/tool_sources.py) — replayed agents "
+            "cannot call tools, so tool checks will be skipped."
+        ))
+        click.echo()
+
+    full_first = not no_full_first
+    upcoming = agent.pending_traces(watch, full=full_first)
+
+    click.echo()
+    click.echo(bold(watch["name"]) + " " + grey(watch["watch_id"][:12]))
+    click.echo(f"  every {bold(A.format_interval(watch['interval_seconds']))}"
+               f" · first cycle covers {bold(len(upcoming))} trace(s)")
+    click.echo()
+
+    if upcoming and not yes:
+        click.echo(f"  Each cycle replays every covered trace with real model calls.")
+        click.confirm("  Start?", abort=True)
+        click.echo()
+
+    glyphs = {"pass": green("✓"), "warn": yellow("!"), "fail": red("✗"),
+              "error": red("✗"), "idle": grey("·")}
+
+    def on_event(kind, payload):
+        if kind == "cycle_start":
+            cycle = payload["cycle"]
+            count = len(cycle["trace_ids"])
+            label = "full sweep" if cycle["full_sweep"] else "incremental"
+            stamp = time.strftime("%H:%M:%S")
+            if count:
+                click.echo(grey(f"  [{stamp}] cycle · {label} · {count} trace(s)"))
+            else:
+                click.echo(grey(f"  [{stamp}] cycle · nothing new"))
+
+        elif kind == "cycle_done":
+            cycle = payload["cycle"]
+            if cycle["skipped"]:
+                return
+            totals = cycle["totals"]
+            colorize = _watch_verdict_color(cycle["verdict"])
+            click.echo(f"      {glyphs.get(cycle['verdict'], '?')} "
+                       + colorize(cycle["verdict"].upper()) + "  "
+                       + f"{green(str(totals.get('pass', 0)) + ' pass')}  "
+                         f"{yellow(str(totals.get('warn', 0)) + ' warn')}  "
+                         f"{red(str(totals.get('fail', 0)) + ' fail')}  "
+                         f"{red(str(totals.get('error', 0)) + ' error')}")
+
+            for item in cycle["regressions"]:
+                click.echo(red(f"      ▲ REGRESSION  {item['trace_id'][:12]}  "
+                               f"{item['was']} → {item['now']}"))
+                if item.get("question"):
+                    click.echo(f"          {grey('asked:')} {item['question'][:66]}")
+                for label in item["failed_checks"]:
+                    click.echo(f"          {red('✗')} {label}")
+                if item.get("replay_id"):
+                    click.echo(grey(f"          diff: replay diff {item['replay_id'][:12]}"))
+
+            for item in cycle["recoveries"]:
+                click.echo(green(f"      ▼ recovered   {item['trace_id'][:12]}  "
+                                 f"{item['was']} → {item['now']}"))
+
+            if cycle.get("run_id"):
+                click.echo(grey(f"      details: replay pressure-show {cycle['run_id'][:12]}"))
+            click.echo()
+
+        elif kind == "sleeping":
+            click.echo(grey(f"  sleeping {A.format_interval(payload['seconds'])} "
+                            f"— Ctrl-C to stop"))
+            click.echo()
+
+    try:
+        agent.loop(watch["watch_id"], once=once, full_first=full_first,
+                   on_event=on_event)
+    except KeyboardInterrupt:
+        agent.stop()
+        click.echo()
+        click.echo(yellow("  Stopped."))
+        click.echo(grey(f"  History: replay agent show {watch['watch_id'][:12]}"))
+        click.echo()
+
+
+@agent_group.command(name="status")
+@click.option("--dir", "traces_dir", default="traces", help="Traces directory")
+def agent_status_cmd(traces_dir):
+    """List every watch and how its last cycle went."""
+    from replay.core import agent as A
+
+    watches = A.WatchStore(traces_dir).list()
+    if not watches:
+        click.echo("No watches yet. Create one with: replay agent watch --from-prompt 0")
+        return
+
+    click.echo()
+    for watch in watches:
+        cycles = watch.get("cycles") or []
+        last = cycles[-1] if cycles else None
+        verdict = last["verdict"] if last else "never run"
+        colorize = _watch_verdict_color(verdict)
+
+        click.echo(f"  {colorize('[' + verdict + ']')} {bold(watch['name'])} "
+                   f"{grey(watch['watch_id'][:12])}")
+        scope = (f"{len(watch['pinned_trace_ids'])} pinned"
+                 if watch.get("pinned_trace_ids") else "all traces")
+        click.echo(f"      every {A.format_interval(watch['interval_seconds'])} · "
+                   f"{scope} · {len(cycles)} cycle(s) · "
+                   f"{len(watch.get('covered_trace_ids') or [])} trace(s) covered")
+
+        regressions = sum(len(c.get("regressions") or []) for c in cycles)
+        if regressions:
+            click.echo(red(f"      ▲ {regressions} regression(s) across recorded cycles"))
+        click.echo(f"      {grey(watch['system_prompt'][:72])}")
+        click.echo()
+
+
+@agent_group.command(name="show")
+@click.argument("watch_id")
+@click.option("--dir", "traces_dir", default="traces", help="Traces directory")
+def agent_show_cmd(watch_id, traces_dir):
+    """Cycle-by-cycle history of one watch."""
+    from replay.core import agent as A
+
+    agent_store = A.WatchStore(traces_dir)
+    watch = agent_store.load(watch_id)
+    if watch is None:
+        click.echo(red(f"No watch matching: {watch_id}"))
+        return
+
+    click.echo()
+    click.echo(bold(watch["name"]) + " " + grey(watch["watch_id"][:12]))
+    click.echo(grey(f"every {A.format_interval(watch['interval_seconds'])} · "
+                    f"{len(watch.get('covered_trace_ids') or [])} trace(s) covered"))
+    click.echo()
+    click.echo(bold("Watched system prompt:"))
+    for line in watch["system_prompt"].splitlines() or [""]:
+        click.echo(f"  {line}")
+    click.echo()
+
+    cycles = watch.get("cycles") or []
+    if not cycles:
+        click.echo(grey("  No cycles yet."))
+        click.echo()
+        return
+
+    for cycle in cycles:
+        stamp = time.strftime("%b %d %H:%M:%S", time.localtime(cycle["started_at"]))
+        colorize = _watch_verdict_color(cycle["verdict"])
+        label = "full" if cycle["full_sweep"] else "incremental"
+        click.echo(f"  {colorize('[' + cycle['verdict'] + ']')} {grey(stamp)} · "
+                   f"{label} · {len(cycle['trace_ids'])} trace(s)")
+
+        for item in cycle.get("regressions") or []:
+            click.echo(red(f"      ▲ {item['trace_id'][:12]} {item['was']} → {item['now']}"
+                           f"  {', '.join(item['failed_checks'][:2])}"))
+        for item in cycle.get("recoveries") or []:
+            click.echo(green(f"      ▼ {item['trace_id'][:12]} "
+                             f"{item['was']} → {item['now']}"))
+        if cycle.get("run_id"):
+            click.echo(grey(f"      replay pressure-show {cycle['run_id'][:12]}"))
+    click.echo()
+
+
+@agent_group.command(name="unwatch")
+@click.argument("watch_id")
+@click.option("--dir", "traces_dir", default="traces", help="Traces directory")
+def agent_unwatch_cmd(watch_id, traces_dir):
+    """Delete a watch and its recorded history."""
+    from replay.core import agent as A
+
+    store = A.WatchStore(traces_dir)
+    watch = store.load(watch_id)
+    if watch is None:
+        click.echo(red(f"No watch matching: {watch_id}"))
+        return
+
+    if store.delete(watch["watch_id"]):
+        click.echo(green(f"✓ Deleted watch {watch['name']}"))
+        click.echo(grey("  The pressure runs it produced are kept — see: replay pressure-log"))
+    else:
+        click.echo(red("Could not delete that watch."))
 
 
 if __name__ == "__main__":

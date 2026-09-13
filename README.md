@@ -210,6 +210,46 @@ Each selected trace is forked at its **entry LLM call** with the candidate promp
 
 Nothing here asks a model to judge a model — every check is something you could verify by hand. Blocking checks fail the run; warnings flag it without failing. Runs stream results live, can be cancelled mid-flight, and are stored under `traces/pressure/` so the history survives a restart. Every replay they produce also lands in the replay log, tagged with the run it came from.
 
+### The pressure agent — pressure tests that re-run themselves
+
+`replay pressure` answers *"is this prompt edit safe?"* once, when you ask. The agent asks it on a loop.
+
+Register a system prompt as a **watch**, and every cycle it replays that prompt against the traces it hasn't covered yet — including traces captured since the last cycle — and tells you the moment something that used to pass starts failing.
+
+```bash
+replay agent watch --from-prompt 0 --every 30m     # register a watch
+replay agent start <watch_id>                      # run it — blocks, Ctrl-C to stop
+replay agent start <watch_id> --once               # a single cycle
+replay agent status                                # every watch, and its last verdict
+replay agent show <watch_id>                       # cycle-by-cycle history
+replay agent unwatch <watch_id>                    # delete it
+```
+
+The output is the regression, not the run:
+
+```
+  [19:22:04] cycle · incremental · 1 trace(s)
+      ✗ FAIL  1 pass  0 warn  1 fail  0 error
+      ▲ REGRESSION  086fd4a17e77  pass → fail
+          asked: I'm planning a trip to Japan. What's its capital…
+          ✗ Tool usage preserved
+          diff: replay diff 5bf9c2df5d26
+```
+
+A watch remembers the last verdict for every trace it has graded, so it can distinguish *this has always failed* from **this passed last cycle and fails now** — which is the part worth waking up for. Recoveries (`fail → pass`) are reported the same way.
+
+| Flag | What it does |
+|---|---|
+| `--every 30s / 15m / 2h` | Cycle interval. A bare number means minutes. Floor is 30s — every cycle is a full agent replay per trace |
+| `--trace <id>` | Pin the watch to specific traces. Default is every trace, re-evaluated each cycle so new captures are picked up automatically |
+| `--contains` / `--not-contains` / `--similarity` | The same assertions `replay pressure` takes |
+| `--once` | One cycle, then exit — the form to put in cron or CI |
+| `--no-full-first` | Skip the opening full sweep and only grade traces not yet covered |
+
+**What it does not do.** It adds no new grading. A cycle is an ordinary pressure run, so every verdict still comes from the same deterministic checks — nothing here asks a model to judge a model. It runs non-interactively, so tools follow the policy the suite already uses: run what was declared `safe=True`, fall back to a registered alternative, skip rather than block. A cycle with nothing new to grade costs nothing — it records an `idle` cycle without making a single model call.
+
+Watches are stored in `traces/agent/`, separate from `traces/pressure/`, and the pressure runs each cycle produces stay in the normal pressure log and replay log.
+
 ### Auto-explore on exit
 
 Set the `REPLAY` env var and the explorer opens automatically when your script finishes:
@@ -285,8 +325,13 @@ replay explore <trace_id> --reload-tools my_agent.py
 | `replay pressure --set-prompt "…"` | Pressure test a candidate system prompt against every trace |
 | `replay pressure-log` | List every pressure run |
 | `replay pressure-show <run_id>` | Full per-trace results of one pressure run |
+| `replay agent watch --from-prompt N --every 30m` | Register a system prompt to re-test on a loop |
+| `replay agent start <watch_id> [--once]` | Run a watch — cycles until stopped, or once |
+| `replay agent status` | Every watch, its interval, coverage and last verdict |
+| `replay agent show <watch_id>` | Cycle-by-cycle history, with regressions and recoveries |
+| `replay agent unwatch <watch_id>` | Delete a watch (its pressure runs are kept) |
 
-All `<trace_id>`, `<span_id>`, `<replay_id>` and `<run_id>` arguments accept partial prefixes.
+All `<trace_id>`, `<span_id>`, `<replay_id>`, `<run_id>` and `<watch_id>` arguments accept partial prefixes.
 
 ---
 
@@ -338,6 +383,8 @@ replay/
                         #   for the CLI, server, replay log and pressure suite)
     replay_log.py       # indexes every played replay + builds original-vs-replay diffs
     pressure.py         # pressure suite — checks, run storage, threaded runner
+    agent.py            # the pressure agent — watches, cycles, regression diffing
+                        #   (drives pressure.py on a loop; adds no grading of its own)
     span.py             # span helpers
     trace.py            # trace helpers
     tracer.py           # tracer wrappers
@@ -349,6 +396,9 @@ replay/
 traces/                  # captured traces (JSON)
   *.replay.*.json        # every replay played, the replay log reads these
   pressure/*.json        # one file per pressure run — config, results, verdict
+  agent/*.json           # one file per watch — prompt, interval, per-trace last
+                         #   verdict, and recent cycles (kept out of pressure/ so
+                         #   PressureStore never parses a watch as a run)
 .replay/
   tool_preferences.json # saved CLI tool decisions
   tool_sources.py       # snapshotted @replay.tool sources
@@ -361,6 +411,9 @@ Key design decisions:
 - **A pressure test is just a fork with a policy** — it reuses the same engine path as a manual system-prompt fork, so anything the console can replay by hand, the suite can replay across every trace
 - **Pressure checks are deterministic** — no LLM-as-judge. Every verdict traces back to something you could check yourself, which is what makes a red result actionable
 - **The replay files are the log** — nothing separate to keep in sync; `replay_log.py` indexes the `*.replay.*.json` the engine already writes
+- **The agent adds no grading** — a cycle is an ordinary pressure run, so the deterministic-checks guarantee above survives automation. All the agent contributes is *when* to run and *what changed since last time*
+- **Regressions come from remembered per-trace verdicts**, not from re-reading old runs — a watch stores the last status per trace, so `passed before, fails now` is a dict lookup rather than a scan of the pressure log
+- **A watch re-runs its own prompt, so cycles pass `include_unchanged=True`** — otherwise `_run_one` skips every trace as "already runs on the candidate prompt" and each cycle silently reports nothing
 
 ---
 
@@ -378,4 +431,6 @@ Python 3.11 · OpenTelemetry (api, sdk) · `opentelemetry-instrumentation-openai
 - Streaming LLM responses are not yet handled
 - Installs from source (`pip install -e .`) — not published to PyPI yet
 - A pressure run costs one full agent replay per trace — real model calls, real spend. Start with a few traces before pointing it at everything.
+- The pressure agent inherits that cost per **cycle** — a watch on a wide interval against many traces can spend steadily and unattended. Idle cycles (nothing new to grade) are free, but a `--full` sweep is not.
+- `replay agent start` runs the loop in the foreground of that process — there is no daemon, supervisor or restart-on-crash. For unattended use, drive `--once` from cron/CI rather than leaving a terminal open.
 - Pressure runs execute in the server/CLI process with a thread pool; there is no queue or worker, so a very large trace set is better split across runs
