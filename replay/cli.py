@@ -811,7 +811,9 @@ def _run_explore(full_trace_id, traces_dir):
 
     term = blessed.Terminal()
     selected = 0
-    scroll_offset = 0
+    # forks played in this session — shown in the header so it is visible that
+    # earlier replays were saved, since the tree resets to the original trace
+    replays_this_session = []
 
     def get_span_inputs(span):
         """Extract human readable inputs from a span."""
@@ -891,10 +893,16 @@ def _run_explore(full_trace_id, traces_dir):
         lines.append(
             bold(f"  Trace: {full_trace_id[:16]}...")
             + grey(f"  ({len(spans)} spans)")
+            + (green(f"  {len(replays_this_session)} replay(s) saved")
+               if replays_this_session else "")
         )
         lines.append(
             grey("  ↑↓ navigate  Enter fork  q quit")
         )
+        if replays_this_session:
+            lines.append(
+                grey("  showing the original trace — fork anywhere else")
+            )
         lines.append("")
 
         visible_nodes = tree_nodes
@@ -954,14 +962,17 @@ def _run_explore(full_trace_id, traces_dir):
         return "\n".join(lines)
 
     def do_fork(node):
-        """Handle forking at the selected span."""
-        # restore normal terminal before any input
-        click.echo(term.normal_cursor)
-        click.echo(term.exit_fullscreen)
-        # reset terminal to normal mode so input echoes correctly
-        import os
-        os.system("stty sane")
-        
+        """
+        Handle forking at the selected span.
+
+        Runs with the explorer's terminal modes already exited by the caller,
+        so click.prompt/click.pause get a normal cooked terminal. It must not
+        touch terminal modes itself — calling `stty sane` here used to clear
+        the cbreak mode blessed still believed it owned, which left term.inkey
+        line-buffered afterwards and made the arrow keys dead.
+
+        Returns True if a replay was saved, so the caller knows to reload.
+        """
         span = node["span"]
         inputs, span_type = get_span_inputs(span)
         attrs = span.get("attributes", {})
@@ -993,7 +1004,7 @@ def _run_explore(full_trace_id, traces_dir):
             click.echo()
             click.echo(yellow("  No changes made. Replay cancelled."))
             click.pause()
-            return
+            return False
 
         click.echo()
         click.echo(bold("  Changes:"))
@@ -1052,11 +1063,12 @@ def _run_explore(full_trace_id, traces_dir):
         if not changes:
             click.echo(yellow("  Could not build changes. Cancelled."))
             click.pause()
-            return
+            return False
 
         click.echo(bold("  Running replay..."))
         click.echo()
 
+        saved = False
         try:
             result = engine.replay(
                 trace_id=full_trace_id,
@@ -1064,6 +1076,7 @@ def _run_explore(full_trace_id, traces_dir):
                 changes=changes,
                 temperature=0.0
             )
+            saved = True
 
             click.echo(green("  ✓ Replay complete"))
             click.echo()
@@ -1103,31 +1116,68 @@ def _run_explore(full_trace_id, traces_dir):
 
         click.echo()
         click.pause("  Press any key to return to explorer...")
+        return saved
+
+    def reload_trace():
+        """
+        Re-read the original trace from disk and rebuild the tree.
+
+        A replay is written to its own {original}.replay.{new}.json and never
+        touches the original file, so this restores the pristine trace — the
+        fork you just ran is saved, and the explorer goes back to the original
+        so the next fork starts from the same ground truth rather than from a
+        half-updated view.
+        """
+        nonlocal trace, spans, spans_by_id, tree_nodes, selected
+
+        trace = loader.load(full_trace_id)
+        spans = trace["spans"]
+        spans.sort(key=lambda s: s["start_time"])
+        spans_by_id = {s["span_id"]: s for s in spans}
+        tree_nodes = _build_tree_nodes(spans, spans_by_id)
+        # keep the cursor valid if the tree changed shape
+        selected = max(0, min(selected, len(tree_nodes) - 1))
 
     # main interactive loop
-    with term.fullscreen(), term.cbreak(), term.hidden_cursor():
-        while True:
-            click.echo(term.clear + render(selected))
+    #
+    # The terminal modes are entered per navigation session rather than once
+    # around everything, because forking drops to a cooked terminal for
+    # click.prompt. Exiting the context managers (instead of hand-emitting
+    # enter/exit_fullscreen while they are still active) is what lets blessed
+    # restore cbreak correctly afterwards — without it the arrow keys stop
+    # registering after the first fork.
+    running = True
+    while running:
+        with term.fullscreen(), term.cbreak(), term.hidden_cursor():
+            fork_target = None
 
-            key = term.inkey(timeout=None)
+            while True:
+                click.echo(term.clear + render(selected))
 
-            if key.name == "KEY_UP":
-                selected = max(0, selected - 1)
+                key = term.inkey(timeout=None)
 
-            elif key.name == "KEY_DOWN":
-                selected = min(len(tree_nodes) - 1, selected + 1)
+                if key.name == "KEY_UP":
+                    selected = max(0, selected - 1)
 
-            elif key.name == "KEY_ENTER" or key == "\n":
-                if is_forkable(tree_nodes[selected]):
-                    click.echo(term.normal_cursor)
-                    click.echo(term.exit_fullscreen)
-                    do_fork(tree_nodes[selected])
-                    # re-enter fullscreen after fork
-                    click.echo(term.enter_fullscreen)
-                    click.echo(term.hide_cursor)
+                elif key.name == "KEY_DOWN":
+                    selected = min(len(tree_nodes) - 1, selected + 1)
 
-            elif key.lower() == "q":
-                break
+                elif key.name == "KEY_ENTER" or key == "\n":
+                    if is_forkable(tree_nodes[selected]):
+                        fork_target = tree_nodes[selected]
+                        break  # leave the terminal contexts before prompting
+
+                elif key.lower() == "q":
+                    running = False
+                    break
+
+        # outside the context managers: terminal is back to normal here
+        if fork_target is not None:
+            if do_fork(fork_target):
+                # the replay is saved; go back to the original trace so the
+                # next fork starts clean and the cursor can move anywhere
+                reload_trace()
+                replays_this_session.append(fork_target)
 
     click.echo(term.normal)
 

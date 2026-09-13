@@ -70,6 +70,8 @@ replay explore <trace_id>
 
 A `blessed`-based TUI that renders the trace as a navigable tree. Arrow keys to move, Enter to fork at the highlighted span. Inputs are shown inline; you edit them in place and the replay runs against your edits. Forkable spans (LLM and tool) are marked with a green diamond.
 
+**Forking is repeatable.** When a replay finishes it is saved to its own `{original}.replay.{new}.json`, and the explorer reloads the *original* trace and hands navigation back to you — so you can move to a different span and fork again, as many times as you like in one session. The header tracks how many replays this session has saved. The original trace file is never modified, so every fork starts from the same ground truth.
+
 ### Replay Console — the live dashboard
 
 ```bash
