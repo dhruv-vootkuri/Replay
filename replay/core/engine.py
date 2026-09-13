@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Optional
 
 from replay.core.loader import TraceLoader
 from replay.core.tool_registry import get_registry
+from replay.core.auth import verify_api_key
 
 
 class ReplayEngine:
@@ -24,7 +25,18 @@ class ReplayEngine:
                  discarded; the loop creates its own.
     """
 
-    def __init__(self, traces_dir: str = "traces"):
+    def __init__(self, traces_dir: str = "traces", api_key: str = None, floe_url: str = None):
+        # api_key/floe_url are optional here and fall back to the
+        # REPLAY_API_KEY/FLOE_API_URL environment variables — that's the
+        # path the CLI and the FastAPI server use. Floe (core/floe.py)
+        # passes its already-known key down explicitly instead, so
+        # `Floe(api_key=...).engine` doesn't depend on the environment at
+        # all. Also checked by the CLI group itself (cli.py) so read-only
+        # commands that never construct a ReplayEngine (list, show, ids,
+        # replays, prompts) are gated too — this second check is what
+        # covers programmatic use and the FastAPI server, neither of which
+        # goes through the CLI group.
+        verify_api_key(api_key, floe_url)
         self.loader = TraceLoader(traces_dir)
         self.traces_dir = traces_dir
         self.registry = get_registry()

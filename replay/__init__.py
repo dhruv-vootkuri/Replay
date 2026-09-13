@@ -4,6 +4,7 @@ import atexit
 from replay.core.setup import setup_tracing, get_tracer
 from replay.core.loader import TraceLoader
 from replay.core.engine import ReplayEngine
+from replay.core.floe import Floe
 from replay.core.tool_registry import get_registry
 from replay.tools import tool
 

@@ -1,8 +1,10 @@
 import click
 import json
 import os
+import sys
 from replay.core.loader import TraceLoader
 from replay.core.engine import ReplayEngine
+from replay.core.auth import InvalidApiKey, verify_api_key
 
 def _build_tree_nodes(spans, spans_by_id):
     """
@@ -95,7 +97,11 @@ def cli():
     """
     Replay — fork any agent trace at any step and see what would have happened.
     """
-    pass
+    try:
+        verify_api_key()
+    except InvalidApiKey as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        sys.exit(1)
 
 
 @cli.command(name="list")
