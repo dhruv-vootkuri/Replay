@@ -15,7 +15,6 @@ When a multi-step agent fails, you don't want to rerun the world. You want to fo
 | **Python** | 3.10 or newer (`python3 --version` to check) |
 | **OS** | macOS, Linux, or Windows |
 | **OpenAI API key** | Only for *capturing* new traces and for replays/pressure tests — browsing traces already on disk needs no key |
-| **Node.js** | Not required. Only for the marketing site in `app/` — the Replay Console dashboard is pure Python |
 
 If you don't have Python 3.10+: [python.org/downloads](https://www.python.org/downloads/), or `brew install python@3.11` on macOS.
 
