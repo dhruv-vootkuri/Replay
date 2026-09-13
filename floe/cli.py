@@ -42,7 +42,12 @@ def bold(text): return click.style(str(text), bold=True)
 
 
 def _is_llm_span(span):
-    return any(k.startswith("gen_ai.prompt.") for k in span.get("attributes", {}))
+    attrs = span.get("attributes", {})
+    return (
+        "gen_ai.input.messages" in attrs
+        or "gen_ai.system_instructions" in attrs
+        or any(k.startswith("gen_ai.prompt.") for k in attrs)
+    )
 
 
 def _is_tool_span(span):
@@ -229,9 +234,9 @@ def show(trace_id, traces_dir):
         # show key attributes inline for LLM spans
         attrs = span.get("attributes", {})
         if _is_llm_span(span):
-            prompt = attrs.get("gen_ai.prompt.0.content", "")
-            completion = attrs.get("gen_ai.completion.0.content", "")
-            tokens = attrs.get("llm.usage.total_tokens", "")
+            prompt = attrs.get("gen_ai.system_instructions") or attrs.get("gen_ai.input.messages") or attrs.get("gen_ai.prompt.0.content", "")
+            completion = attrs.get("gen_ai.output.messages") or attrs.get("gen_ai.completion.0.content", "")
+            tokens = attrs.get("gen_ai.usage.total_tokens") or attrs.get("llm.usage.total_tokens", "")
 
             if prompt:
                 click.echo(f"       {indent}   {grey('in:')}  {prompt[:60]}{'...' if len(prompt) > 60 else ''}")
@@ -842,7 +847,7 @@ def _run_explore(full_trace_id, traces_dir):
         inputs = {}
 
         # LLM span — show messages
-        if any(k.startswith("gen_ai.prompt.") for k in attrs):
+        if _is_llm_span(span):
             messages_json = attrs.get("replay.messages_json")
             if messages_json:
                 messages = _json.loads(messages_json)
@@ -887,7 +892,7 @@ def _run_explore(full_trace_id, traces_dir):
         if "execute_tool" in name:
             tool_name = attrs.get("gen_ai.tool.name", name)
             return f"[tool]  {tool_name}"
-        elif any(k.startswith("gen_ai.prompt.") for k in attrs):
+        elif _is_llm_span(span):
             return f"[llm]   {name}"
         elif "invoke_agent" in name:
             return f"[agent] {name}"
@@ -902,10 +907,7 @@ def _run_explore(full_trace_id, traces_dir):
         """Only LLM and tool spans are forkable."""
         span = node["span"]
         attrs = span.get("attributes", {})
-        return (
-            any(k.startswith("gen_ai.prompt.") for k in attrs)
-            or "gen_ai.tool.name" in attrs
-        )
+        return _is_llm_span(span) or "gen_ai.tool.name" in attrs
 
     def render(selected_idx):
         """Render the full explore UI."""

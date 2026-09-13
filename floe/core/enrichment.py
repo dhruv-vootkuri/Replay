@@ -28,7 +28,11 @@ class ReplayEnrichmentProcessor:
         return span_dict
 
     def _is_llm_span(self, attrs: Dict[str, Any]) -> bool:
-        return any(k.startswith("gen_ai.prompt.") for k in attrs)
+        return (
+            "gen_ai.input.messages" in attrs
+            or "gen_ai.system_instructions" in attrs
+            or any(k.startswith("gen_ai.prompt.") for k in attrs)
+        )
 
     def _is_tool_span(self, attrs: Dict[str, Any]) -> bool:
         return (
@@ -64,13 +68,38 @@ class ReplayEnrichmentProcessor:
 
     def _extract_messages(self, attrs: Dict[str, Any]) -> list:
         messages = []
-        i = 0
 
+        # opentelemetry-instrumentation-openai 0.53.3 emits the system
+        # prompt as its own gen_ai.system_instructions attribute — a JSON
+        # array of {"type": "text", "content": ...} blocks — separate from
+        # every other message, which itself moved from the old indexed
+        # gen_ai.prompt.{i}.role/content scheme to a single gen_ai.input.
+        # messages JSON array of {"role", "parts": [...]} objects. Without
+        # handling both of these, replay.messages_json came out empty for
+        # every LLM span captured under the currently pinned instrumentation
+        # version — the system prompt (and the rest of the conversation)
+        # was invisible everywhere that reads it: the explore UI's and the
+        # dashboard's fork forms.
+        system_instructions = attrs.get("gen_ai.system_instructions")
+        if system_instructions:
+            content = self._flatten_text_blocks(system_instructions)
+            if content:
+                messages.append({"role": "system", "content": content})
+
+        if "gen_ai.input.messages" in attrs:
+            messages.extend(self._extract_new_schema_messages(attrs["gen_ai.input.messages"]))
+            return messages
+
+        # Fallback: the older indexed gen_ai.prompt.{i}.role/content scheme,
+        # for traces captured under an older instrumentation version.
+        i = 0
         while f"gen_ai.prompt.{i}.role" in attrs:
             role = attrs[f"gen_ai.prompt.{i}.role"]
             content = attrs.get(f"gen_ai.prompt.{i}.content", "")
 
-            if role in ("system", "user"):
+            if role == "system" and messages and messages[0]["role"] == "system":
+                pass  # already added from gen_ai.system_instructions above
+            elif role in ("system", "user"):
                 messages.append({"role": role, "content": content})
 
             elif role == "assistant":
@@ -111,6 +140,75 @@ class ReplayEnrichmentProcessor:
                 })
 
             i += 1
+
+        return messages
+
+    def _flatten_text_blocks(self, raw: Any) -> str:
+        """Joins a JSON array of {"type": "text", "content": ...} blocks."""
+        try:
+            blocks = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            return ""
+        if not isinstance(blocks, list):
+            return str(blocks) if blocks else ""
+        return "\n".join(
+            b.get("content", "") for b in blocks if isinstance(b, dict) and b.get("content")
+        )
+
+    def _extract_new_schema_messages(self, raw: Any) -> list:
+        """
+        Parses the current OTel GenAI semconv message format: a JSON array
+        of {"role", "parts": [{"type": "text"|"tool_call"|
+        "tool_call_response", ...}]} objects, into this module's normalized
+        {"role", "content", "tool_calls"?, "tool_call_id"?} shape — the same
+        shape the old gen_ai.prompt.{i}.* scheme produced, since engine.py
+        and the CLI/dashboard fork forms are all built against that shape.
+        """
+        try:
+            parsed = json.loads(raw) if isinstance(raw, str) else raw
+        except (json.JSONDecodeError, TypeError):
+            return []
+        if not isinstance(parsed, list):
+            return []
+
+        messages = []
+        for msg in parsed:
+            if not isinstance(msg, dict):
+                continue
+            role = msg.get("role")
+            parts = msg.get("parts", [])
+            if not isinstance(parts, list):
+                parts = []
+
+            text_chunks = []
+            tool_calls = []
+            tool_call_id = ""
+            for part in parts:
+                if not isinstance(part, dict):
+                    continue
+                ptype = part.get("type")
+                if ptype == "text":
+                    text_chunks.append(part.get("content", ""))
+                elif ptype == "tool_call":
+                    arguments = part.get("arguments", {})
+                    tool_calls.append({
+                        "id": part.get("id", ""),
+                        "type": "function",
+                        "function": {
+                            "name": part.get("name", ""),
+                            "arguments": arguments if isinstance(arguments, str) else json.dumps(arguments),
+                        },
+                    })
+                elif ptype == "tool_call_response":
+                    text_chunks.append(str(part.get("response", "")))
+                    tool_call_id = part.get("id", tool_call_id)
+
+            entry: Dict[str, Any] = {"role": role, "content": "\n".join(text_chunks)}
+            if tool_calls:
+                entry["tool_calls"] = tool_calls
+            if role == "tool":
+                entry["tool_call_id"] = tool_call_id
+            messages.append(entry)
 
         return messages
 
