@@ -3,12 +3,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "floe"
+name = "floe-ai"
 version = "0.1.0"
-description = "Git for agent execution — fork any step of a captured agent trace and rerun from there."
+description = "Optimize & observe your agent infrastructure."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 
 # Core runtime. Everything `floe replay list/show/fork/diff/explore/serve/
 # pressure` needs. LangChain is deliberately NOT here — it is only required
